@@ -26,12 +26,11 @@ Procedure LoadSprites()
   If Not Loaded
     Debug "not loaded"
   EndIf
-  
   ZoomSprite(#Hero_Sprite, SpriteWidth(#Hero_Sprite) * 4, SpriteHeight(#Hero_Sprite) * 4)
   Debug SpriteWidth(#Hero_Sprite)
   Debug SpriteHeight(#Hero_Sprite)
 EndProcedure
-Procedure InitSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.i, IsAnimated.b, IsVisible.b, ZoomLevel.f)
+Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.i, IsAnimated.b, IsVisible.b, ZoomLevel.f)
   *Sprite\x = x : *Sprite\y = y : *Sprite\XVelocity = XVel : *Sprite\YVelocity = YVel
   *Sprite\SpriteNum = SpriteNum : *Sprite\IsAnimated = IsAnimated : *Sprite\IsVisible = IsVisible : *Sprite\ZoomLevel = ZoomLevel
   *Sprite\CurrentFrame = 0 : *Sprite\AnimationTimer = 0.0
@@ -70,8 +69,3 @@ If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_
     Until ExitGame
   EndIf
 EndIf
-; IDE Options = PureBasic 5.71 LTS (Linux - x64)
-; CursorPosition = 22
-; FirstLine = 31
-; Folding = -
-; EnableXP
