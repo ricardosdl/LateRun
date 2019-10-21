@@ -12,7 +12,10 @@ Structure TSprite
   YVelocity.f
   SpriteNum.i
   IsAnimated.b
+  NumFrames.a
   CurrentFrame.a
+  Width.u
+  Height.u
   AnimationTimer.f
   IsVisible.b
   ZoomLevel.f
@@ -20,22 +23,44 @@ EndStructure
 
 Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.f, SoundInitiated.b
 Global NewList SpriteDisplayList.TSprite(), NewList SpriteUpdateList.TSprite(), Hero.TSprite
+#Animation_FPS = 4
 #Hero_Sprite = 1
-Procedure LoadSprites()
-  Loaded.i = LoadSprite(#Hero_Sprite, BasePath + "graphics" + #PS$ + "hero.png")
-  If Not Loaded
-    Debug "not loaded"
-  EndIf
-  ZoomSprite(#Hero_Sprite, SpriteWidth(#Hero_Sprite) * 4, SpriteHeight(#Hero_Sprite) * 4)
-  Debug SpriteWidth(#Hero_Sprite)
-  Debug SpriteHeight(#Hero_Sprite)
-EndProcedure
-Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.i, IsAnimated.b, IsVisible.b, ZoomLevel.f)
+Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.i, SpritePath.s, IsAnimated.b, NumFrames.a, IsVisible.b, ZoomLevel.f)
   *Sprite\x = x : *Sprite\y = y : *Sprite\XVelocity = XVel : *Sprite\YVelocity = YVel
   *Sprite\SpriteNum = SpriteNum : *Sprite\IsAnimated = IsAnimated : *Sprite\IsVisible = IsVisible : *Sprite\ZoomLevel = ZoomLevel
   *Sprite\CurrentFrame = 0 : *Sprite\AnimationTimer = 0.0
+  LoadSprite(*Sprite\SpriteNum, SpritePath)
+  If ZoomLevel <> 0
+    ZoomSprite(*Sprite\SpriteNum, SpriteWidth(*Sprite\SpriteNum) * ZoomLevel, SpriteHeight(*Sprite\SpriteNum) * ZoomLevel)
+  EndIf
+  *Sprite\NumFrames = IIf(IsAnimated, NumFrames, 1) : *Sprite\AnimationTimer = 1 / #Animation_FPS
+  *Sprite\Width = IIf(Bool(Not IsAnimated), SpriteWidth(*Sprite\SpriteNum), SpriteWidth(*Sprite\SpriteNum) / NumFrames)
+  *Sprite\Height = SpriteHeight(*Sprite\SpriteNum);we assume all sprite sheets are only one row
 EndProcedure
-
+Procedure UpdateSpriteList(List SpriteList.TSprite(), Elapsed.f)
+  ForEach SpriteList()
+;     If SpriteList()\IsAnimated
+;     Else
+;       ;DisplaySprite(SpriteList()\SpriteNum, SpriteList()\x, SpriteList()\y, )
+;     EndIf
+    
+  Next
+  
+EndProcedure
+Procedure DisplaySpriteList(List SpriteList.TSprite(), Elapsed.f)
+  ForEach SpriteList()
+    If SpriteList()\IsAnimated
+      ClipSprite(SpriteList()\SpriteNum, SpriteList()\CurrentFrame * SpriteList()\Width, 0, SpriteList()\Width, SpriteList()\Height)
+      ;ZoomSprite(SpriteList()\SpriteNum, SpriteWidth(SpriteList()\SpriteNum) * ZoomLevel, SpriteHeight(SpriteList()\SpriteNum) * ZoomLevel)
+      If SpriteList()\AnimationTimer <= 0
+        SpriteList()\CurrentFrame = IIf(Bool(SpriteList()\CurrentFrame + 1 > SpriteList()\NumFrames - 1), 0, SpriteList()\CurrentFrame + 1)
+        SpriteList()\AnimationTimer = 1 / #Animation_FPS
+      EndIf
+      SpriteList()\AnimationTimer - Elapsed
+    EndIf
+    DisplaySprite(SpriteList()\SpriteNum, SpriteList()\x, SpriteList()\y)
+  Next
+EndProcedure
 
 If InitSprite() = 0 Or InitKeyboard() = 0
   MessageRequester("Error", "Sprite system or keyboard system can't be initialized", 0)
@@ -45,7 +70,8 @@ UsePNGImageDecoder()
 SoundInitiated = InitSound()
 If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_ScreenCentered)
   If OpenWindowedScreen(WindowID(0), 0, 0, 640, 480, 0, 0, 0)
-    LoadSprites()
+    InitializeSprite(Hero, ScreenWidth() / 2, ScreenHeight() / 2, 0, 0, #Hero_Sprite, BasePath + "graphics" + #PS$ + "hero.png", #True, 4, #True, 4)
+    AddElement(SpriteDisplayList()) : SpriteDisplayList() = Hero : AddElement(SpriteUpdateList()) : SpriteUpdateList() = Hero
     ;LoadSounds()
     ;StartGame(#False)
     Repeat
@@ -61,11 +87,10 @@ If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_
       FlipBuffers()
       ClearScreen(RGB(0,0,0))
       ExamineKeyboard()
-      DisplaySprite(#Hero_Sprite, ScreenWidth() / 2, ScreenHeight() / 2)
       ElapsedTimneInS = (ElapsedMilliseconds() - StartTimeInMs) / 1000.0
-      If ElapsedTimneInS >= 0.05;never let the elapsed time be higher than 20 fps
-        ElapsedTimneInS = 0.05
-      EndIf
+      ElapsedTimneInS = IIf(Bool(ElapsedTimneInS >= 0.05), 0.05, ElapsedTimneInS)
+      ;update here and then display
+      DisplaySpriteList(SpriteDisplayList(), ElapsedTimneInS)
     Until ExitGame
   EndIf
 EndIf
