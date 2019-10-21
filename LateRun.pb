@@ -23,16 +23,13 @@ EndStructure
 
 Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.f, SoundInitiated.b
 Global NewList SpriteDisplayList.TSprite(), NewList SpriteUpdateList.TSprite(), Hero.TSprite
-#Animation_FPS = 4
+#Animation_FPS = 12
 #Hero_Sprite = 1
-Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.i, SpritePath.s, IsAnimated.b, NumFrames.a, IsVisible.b, ZoomLevel.f)
+Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.i, SpritePath.s, IsAnimated.b, NumFrames.a, IsVisible.b, ZoomLevel.f = 1)
   *Sprite\x = x : *Sprite\y = y : *Sprite\XVelocity = XVel : *Sprite\YVelocity = YVel
   *Sprite\SpriteNum = SpriteNum : *Sprite\IsAnimated = IsAnimated : *Sprite\IsVisible = IsVisible : *Sprite\ZoomLevel = ZoomLevel
   *Sprite\CurrentFrame = 0 : *Sprite\AnimationTimer = 0.0
   LoadSprite(*Sprite\SpriteNum, SpritePath)
-  If ZoomLevel <> 0
-    ZoomSprite(*Sprite\SpriteNum, SpriteWidth(*Sprite\SpriteNum) * ZoomLevel, SpriteHeight(*Sprite\SpriteNum) * ZoomLevel)
-  EndIf
   *Sprite\NumFrames = IIf(IsAnimated, NumFrames, 1) : *Sprite\AnimationTimer = 1 / #Animation_FPS
   *Sprite\Width = IIf(Bool(Not IsAnimated), SpriteWidth(*Sprite\SpriteNum), SpriteWidth(*Sprite\SpriteNum) / NumFrames)
   *Sprite\Height = SpriteHeight(*Sprite\SpriteNum);we assume all sprite sheets are only one row
@@ -51,7 +48,7 @@ Procedure DisplaySpriteList(List SpriteList.TSprite(), Elapsed.f)
   ForEach SpriteList()
     If SpriteList()\IsAnimated
       ClipSprite(SpriteList()\SpriteNum, SpriteList()\CurrentFrame * SpriteList()\Width, 0, SpriteList()\Width, SpriteList()\Height)
-      ;ZoomSprite(SpriteList()\SpriteNum, SpriteWidth(SpriteList()\SpriteNum) * ZoomLevel, SpriteHeight(SpriteList()\SpriteNum) * ZoomLevel)
+      ZoomSprite(SpriteList()\SpriteNum, SpriteWidth(SpriteList()\SpriteNum) * SpriteList()\ZoomLevel, SpriteHeight(SpriteList()\SpriteNum) * SpriteList()\ZoomLevel)
       If SpriteList()\AnimationTimer <= 0
         SpriteList()\CurrentFrame = IIf(Bool(SpriteList()\CurrentFrame + 1 > SpriteList()\NumFrames - 1), 0, SpriteList()\CurrentFrame + 1)
         SpriteList()\AnimationTimer = 1 / #Animation_FPS
@@ -66,8 +63,7 @@ If InitSprite() = 0 Or InitKeyboard() = 0
   MessageRequester("Error", "Sprite system or keyboard system can't be initialized", 0)
   End
 EndIf
-UsePNGImageDecoder()
-SoundInitiated = InitSound()
+UsePNGImageDecoder() : SoundInitiated = InitSound()
 If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_ScreenCentered)
   If OpenWindowedScreen(WindowID(0), 0, 0, 640, 480, 0, 0, 0)
     InitializeSprite(Hero, ScreenWidth() / 2, ScreenHeight() / 2, 0, 0, #Hero_Sprite, BasePath + "graphics" + #PS$ + "hero.png", #True, 4, #True, 4)
