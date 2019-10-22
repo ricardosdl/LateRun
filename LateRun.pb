@@ -22,7 +22,7 @@ Structure TSprite
 EndStructure
 Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.f, SoundInitiated.b
 Global NewList *SpriteDisplayList.TSprite(), NewList *SpriteUpdateList.TSprite(), Hero.TSprite;
-Global IsHeroOnGround.b = #True, HeroGroundY.f
+Global IsHeroOnGround.b = #True, HeroGroundY.f, HeroJumpTimer.f, IsHeroJumping.b = #False
 #Animation_FPS = 12
 #Hero_Sprite = 1
 Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.i, SpritePath.s, NumFrames.a, IsVisible.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1)
@@ -35,9 +35,25 @@ Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.
   *Sprite\Height = SpriteHeight(*Sprite\SpriteNum);we assume all sprite sheets are only one row
 EndProcedure
 Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero sprite state here
-  *HeroSprite.TSprite = HeroSpriteAddress
-  If KeyboardPushed(#PB_Key_Space)
-    *HeroSprite\YVelocity = -500.0 : IsHeroOnGround = #False
+  *HeroSprite.TSprite = HeroSpriteAddress : SpacePushed.b = KeyboardPushed(#PB_Key_Space) : SpaceReleased.b = KeyboardReleased(#PB_Key_Space)
+  If (Not IsHeroJumping) And SpacePushed And IsHeroOnGround
+    IsHeroJumping = #True
+  EndIf
+  HeroJumpTimer + IIf(IsHeroJumping, Elapsed, 0.0)
+  If (IsHeroJumping And (HeroJumpTimer >= 0.15)) Or (IsHeroJumping And SpaceReleased)
+    EndHeroJump = #True
+  EndIf
+  If EndHeroJump;the hero jumped!
+    HeroJumpTimerInMs.l = Int(IIf(Bool(HeroJumpTimer * 1000 > 150), 150, HeroJumpTimer * 1000))
+    IsHeroJumping = #False : HeroJumpTimer = 0.0 : EndHeroJump = #False : IsHeroOnGround = #False
+    Select HeroJumpTimerInMs
+      Case 75 To 150;max jump
+        *HeroSprite\YVelocity = -500.0
+        Debug "max jump:" + Str(HeroJumpTimerInMs)
+      Default
+        *HeroSprite\YVelocity = -400.0
+        Debug "min jump:" + Str(HeroJumpTimerInMs)
+    EndSelect
   EndIf
   *HeroSprite\y + *HeroSprite\YVelocity * Elapsed
   If *HeroSprite\y > HeroGroundY
@@ -70,7 +86,7 @@ EndProcedure
 Procedure StartGame();we start a new game here
   InitializeSprite(Hero, 0, 0, 0, 0, #Hero_Sprite, BasePath + "graphics" + #PS$ + "hero.png", 4, #True, @UpdateHero(), 4)
   Hero\x = Hero\Width * Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : Hero\y = HeroGroundY;starting position for the hero
-  IsHeroOnGround = #True
+  IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False
   AddSpriteToList(@Hero, *SpriteDisplayList()) : AddSpriteToList(@Hero, *SpriteUpdateList());add to the SpriteDisplayList(to show it on the screen) and SpriteUpdateList (to update it)
 EndProcedure
 
