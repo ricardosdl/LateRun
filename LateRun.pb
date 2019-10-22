@@ -1,79 +1,81 @@
-﻿Procedure.f IIf(Test.b, ValTrue.f, ValFalse.f)
+﻿Procedure.f IIf(Test.b, ValTrue.f, ValFalse.f);classic vb function, helps us to save some lines in if else endif fragments
   If Test
     ProcedureReturn ValTrue
   EndIf
   ProcedureReturn ValFalse
 EndProcedure
-
+Prototype UpdateSpriteProc(SpriteAddress.i, Elapsed.f);our prototype procedure that each sprite can call to update itself
 Structure TSprite
   x.f
   y.f
   XVelocity.f
   YVelocity.f
   SpriteNum.i
-  IsAnimated.b
   NumFrames.a
   CurrentFrame.a
-  Width.u
-  Height.u
+  Width.u;the original width of the sprite, before zooming
+  Height.u;the original height of the sprite, before zooming
   AnimationTimer.f
   IsVisible.b
-  ZoomLevel.f
+  ZoomLevel.f;the actual width or height it must be multiplied by the zoomlevel value
+  Update.UpdateSpriteProc;the address of the update procedure that will update sprites positions and velocities, also handles inputs
 EndStructure
-
 Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.f, SoundInitiated.b
-Global NewList SpriteDisplayList.TSprite(), NewList SpriteUpdateList.TSprite(), Hero.TSprite
-#Animation_FPS = 4
+Global NewList *SpriteDisplayList.TSprite(), NewList *SpriteUpdateList.TSprite(), Hero.TSprite;
+#Animation_FPS = 12
 #Hero_Sprite = 1
-Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.i, SpritePath.s, IsAnimated.b, NumFrames.a, IsVisible.b, ZoomLevel.f)
+Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.i, SpritePath.s, NumFrames.a, IsVisible.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1)
   *Sprite\x = x : *Sprite\y = y : *Sprite\XVelocity = XVel : *Sprite\YVelocity = YVel
-  *Sprite\SpriteNum = SpriteNum : *Sprite\IsAnimated = IsAnimated : *Sprite\IsVisible = IsVisible : *Sprite\ZoomLevel = ZoomLevel
-  *Sprite\CurrentFrame = 0 : *Sprite\AnimationTimer = 0.0
+  *Sprite\SpriteNum = SpriteNum : *Sprite\IsVisible = IsVisible : *Sprite\ZoomLevel = ZoomLevel
+  *Sprite\Update = UpdateProc : *Sprite\CurrentFrame = 0 : *Sprite\AnimationTimer = 1 / #Animation_FPS
   LoadSprite(*Sprite\SpriteNum, SpritePath)
-  If ZoomLevel <> 0
-    ZoomSprite(*Sprite\SpriteNum, SpriteWidth(*Sprite\SpriteNum) * ZoomLevel, SpriteHeight(*Sprite\SpriteNum) * ZoomLevel)
-  EndIf
-  *Sprite\NumFrames = IIf(IsAnimated, NumFrames, 1) : *Sprite\AnimationTimer = 1 / #Animation_FPS
-  *Sprite\Width = IIf(Bool(Not IsAnimated), SpriteWidth(*Sprite\SpriteNum), SpriteWidth(*Sprite\SpriteNum) / NumFrames)
+  *Sprite\NumFrames = NumFrames
+  *Sprite\Width = SpriteWidth(*Sprite\SpriteNum) / NumFrames
   *Sprite\Height = SpriteHeight(*Sprite\SpriteNum);we assume all sprite sheets are only one row
 EndProcedure
-Procedure UpdateSpriteList(List SpriteList.TSprite(), Elapsed.f)
-  ForEach SpriteList()
-;     If SpriteList()\IsAnimated
-;     Else
-;       ;DisplaySprite(SpriteList()\SpriteNum, SpriteList()\x, SpriteList()\y, )
-;     EndIf
-    
-  Next
+Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero sprite state here
+  *HeroSprite.TSprite = HeroSpriteAddress
+  If KeyboardPushed(#PB_Key_Space)
+    *HeroSprite\YVelocity = -50.0
+  EndIf
+  
+  *HeroSprite\y + *HeroSprite\YVelocity * Elapsed
   
 EndProcedure
-Procedure DisplaySpriteList(List SpriteList.TSprite(), Elapsed.f)
-  ForEach SpriteList()
-    If SpriteList()\IsAnimated
-      ClipSprite(SpriteList()\SpriteNum, SpriteList()\CurrentFrame * SpriteList()\Width, 0, SpriteList()\Width, SpriteList()\Height)
-      ;ZoomSprite(SpriteList()\SpriteNum, SpriteWidth(SpriteList()\SpriteNum) * ZoomLevel, SpriteHeight(SpriteList()\SpriteNum) * ZoomLevel)
-      If SpriteList()\AnimationTimer <= 0
-        SpriteList()\CurrentFrame = IIf(Bool(SpriteList()\CurrentFrame + 1 > SpriteList()\NumFrames - 1), 0, SpriteList()\CurrentFrame + 1)
-        SpriteList()\AnimationTimer = 1 / #Animation_FPS
-      EndIf
-      SpriteList()\AnimationTimer - Elapsed
-    EndIf
-    DisplaySprite(SpriteList()\SpriteNum, SpriteList()\x, SpriteList()\y)
+Procedure UpdateSpriteList(List *SpriteList.TSprite(), Elapsed.f)
+  ForEach *SpriteList()
+    *SpriteList()\Update(*SpriteList(), Elapsed)
   Next
+EndProcedure
+Procedure DisplaySpriteList(List *SpriteList.TSprite(), Elapsed.f)
+  ForEach *SpriteList()
+    ClipSprite(*SpriteList()\SpriteNum, *SpriteList()\CurrentFrame * *SpriteList()\Width, 0, *SpriteList()\Width, *SpriteList()\Height);here we clip the current frame that we want to display
+    ZoomSprite(*SpriteList()\SpriteNum, *SpriteList()\Width * *SpriteList()\ZoomLevel, *SpriteList()\Height * *SpriteList()\ZoomLevel);the zoom must be applied after the clipping(https://www.purebasic.fr/english/viewtopic.php?p=421807#p421807)
+    If *SpriteList()\AnimationTimer <= 0.0;time to change frames and reset the animation timer
+      *SpriteList()\CurrentFrame = IIf(Bool(*SpriteList()\CurrentFrame + 1 > *SpriteList()\NumFrames - 1), 0, *SpriteList()\CurrentFrame + 1)
+      *SpriteList()\AnimationTimer = 1 / #Animation_FPS
+    EndIf
+    *SpriteList()\AnimationTimer - Elapsed;run the timer to get to the next frame
+    DisplaySprite(*SpriteList()\SpriteNum, *SpriteList()\x, *SpriteList()\y)
+  Next
+EndProcedure
+Procedure AddSpriteToList(*Sprite.TSprite, List *SpriteList.TSprite());general procedure to add TSprites to lists
+  AddElement(*SpriteList()) : *SpriteList() = *Sprite
+EndProcedure
+Procedure StartGame();we start a new game here
+  InitializeSprite(Hero, 0, 0, 0, 0, #Hero_Sprite, BasePath + "graphics" + #PS$ + "hero.png", 4, #True, @UpdateHero(), 4)
+  Hero\x = Hero\Width * Hero\ZoomLevel : Hero\y = ScreenHeight() / 2 * 1.25;starting position for the hero
+  AddSpriteToList(@Hero, *SpriteDisplayList()) : AddSpriteToList(@Hero, *SpriteUpdateList());add to the SpriteDisplayList(to show it on the screen) and SpriteUpdateList (to update it)
 EndProcedure
 
 If InitSprite() = 0 Or InitKeyboard() = 0
   MessageRequester("Error", "Sprite system or keyboard system can't be initialized", 0)
   End
 EndIf
-UsePNGImageDecoder()
-SoundInitiated = InitSound()
+UsePNGImageDecoder() : SoundInitiated = InitSound()
 If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_ScreenCentered)
   If OpenWindowedScreen(WindowID(0), 0, 0, 640, 480, 0, 0, 0)
-    InitializeSprite(Hero, ScreenWidth() / 2, ScreenHeight() / 2, 0, 0, #Hero_Sprite, BasePath + "graphics" + #PS$ + "hero.png", #True, 4, #True, 4)
-    AddElement(SpriteDisplayList()) : SpriteDisplayList() = Hero : AddElement(SpriteUpdateList()) : SpriteUpdateList() = Hero
-    ;LoadSounds()
-    ;StartGame(#False)
+    StartGame()
     Repeat
       StartTimeInMs = ElapsedMilliseconds()
       Repeat
@@ -89,8 +91,8 @@ If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_
       ExamineKeyboard()
       ElapsedTimneInS = (ElapsedMilliseconds() - StartTimeInMs) / 1000.0
       ElapsedTimneInS = IIf(Bool(ElapsedTimneInS >= 0.05), 0.05, ElapsedTimneInS)
-      ;update here and then display
-      DisplaySpriteList(SpriteDisplayList(), ElapsedTimneInS)
+      UpdateSpriteList(*SpriteUpdateList(), ElapsedTimneInS)
+      DisplaySpriteList(*SpriteDisplayList(), ElapsedTimneInS)
     Until ExitGame
   EndIf
 EndIf
