@@ -22,6 +22,7 @@ Structure TSprite
 EndStructure
 Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.f, SoundInitiated.b
 Global NewList *SpriteDisplayList.TSprite(), NewList *SpriteUpdateList.TSprite(), Hero.TSprite;
+Global IsHeroOnGround.b = #True, HeroGroundY.f
 #Animation_FPS = 12
 #Hero_Sprite = 1
 Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.i, SpritePath.s, NumFrames.a, IsVisible.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1)
@@ -36,11 +37,15 @@ EndProcedure
 Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero sprite state here
   *HeroSprite.TSprite = HeroSpriteAddress
   If KeyboardPushed(#PB_Key_Space)
-    *HeroSprite\YVelocity = -50.0
+    *HeroSprite\YVelocity = -50.0 : IsHeroOnGround = #False
   EndIf
-  
   *HeroSprite\y + *HeroSprite\YVelocity * Elapsed
-  
+  If *HeroSprite\y > HeroGroundY
+    *HeroSprite\y = HeroGroundY : IsHeroOnGround = #True
+  EndIf
+  If Not IsHeroOnGround
+    *HeroSprite\YVelocity + 50 * Elapsed
+  EndIf
 EndProcedure
 Procedure UpdateSpriteList(List *SpriteList.TSprite(), Elapsed.f)
   ForEach *SpriteList()
@@ -64,7 +69,8 @@ Procedure AddSpriteToList(*Sprite.TSprite, List *SpriteList.TSprite());general p
 EndProcedure
 Procedure StartGame();we start a new game here
   InitializeSprite(Hero, 0, 0, 0, 0, #Hero_Sprite, BasePath + "graphics" + #PS$ + "hero.png", 4, #True, @UpdateHero(), 4)
-  Hero\x = Hero\Width * Hero\ZoomLevel : Hero\y = ScreenHeight() / 2 * 1.25;starting position for the hero
+  Hero\x = Hero\Width * Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : Hero\y = HeroGroundY;starting position for the hero
+  IsHeroOnGround = #True
   AddSpriteToList(@Hero, *SpriteDisplayList()) : AddSpriteToList(@Hero, *SpriteUpdateList());add to the SpriteDisplayList(to show it on the screen) and SpriteUpdateList (to update it)
 EndProcedure
 
