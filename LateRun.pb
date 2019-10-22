@@ -37,14 +37,14 @@ EndProcedure
 Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero sprite state here
   *HeroSprite.TSprite = HeroSpriteAddress
   If KeyboardPushed(#PB_Key_Space)
-    *HeroSprite\YVelocity = -50.0 : IsHeroOnGround = #False
+    *HeroSprite\YVelocity = -500.0 : IsHeroOnGround = #False
   EndIf
   *HeroSprite\y + *HeroSprite\YVelocity * Elapsed
   If *HeroSprite\y > HeroGroundY
     *HeroSprite\y = HeroGroundY : IsHeroOnGround = #True
   EndIf
   If Not IsHeroOnGround
-    *HeroSprite\YVelocity + 50 * Elapsed
+    *HeroSprite\YVelocity + 1000 * Elapsed
   EndIf
 EndProcedure
 Procedure UpdateSpriteList(List *SpriteList.TSprite(), Elapsed.f)
