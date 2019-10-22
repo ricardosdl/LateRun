@@ -44,20 +44,12 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
     EndHeroJump = #True
   EndIf
   If EndHeroJump;the hero jumped!
-    HeroJumpTimerInMs.l = Int(IIf(Bool(HeroJumpTimer * 1000 > 150), 150, HeroJumpTimer * 1000))
+    *HeroSprite\YVelocity = IIf(Bool(HeroJumpTimer >= 0.15), -500.0, -400.0)
     IsHeroJumping = #False : HeroJumpTimer = 0.0 : EndHeroJump = #False : IsHeroOnGround = #False
-    Select HeroJumpTimerInMs
-      Case 75 To 150;max jump
-        *HeroSprite\YVelocity = -500.0
-        Debug "max jump:" + Str(HeroJumpTimerInMs)
-      Default
-        *HeroSprite\YVelocity = -400.0
-        Debug "min jump:" + Str(HeroJumpTimerInMs)
-    EndSelect
   EndIf
   *HeroSprite\y + *HeroSprite\YVelocity * Elapsed
   If *HeroSprite\y > HeroGroundY
-    *HeroSprite\y = HeroGroundY : IsHeroOnGround = #True
+    *HeroSprite\y = HeroGroundY : IsHeroOnGround = #True : *HeroSprite\YVelocity = 0.0
   EndIf
   If Not IsHeroOnGround
     *HeroSprite\YVelocity + 1000 * Elapsed
