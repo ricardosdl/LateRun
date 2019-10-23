@@ -44,15 +44,15 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
     EndHeroJump = #True
   EndIf
   If EndHeroJump;the hero jumped!
-    *HeroSprite\YVelocity = IIf(Bool(HeroJumpTimer >= 0.15), -500.0, -400.0)
+    *HeroSprite\YVelocity = IIf(Bool(HeroJumpTimer >= 0.15), -700.0, -600.0)
     IsHeroJumping = #False : HeroJumpTimer = 0.0 : EndHeroJump = #False : IsHeroOnGround = #False
   EndIf
   *HeroSprite\y + *HeroSprite\YVelocity * Elapsed
   If *HeroSprite\y > HeroGroundY
     *HeroSprite\y = HeroGroundY : IsHeroOnGround = #True : *HeroSprite\YVelocity = 0.0
   EndIf
-  If Not IsHeroOnGround
-    *HeroSprite\YVelocity + 1000 * Elapsed
+  If Not IsHeroOnGround;kind like gravity here
+    *HeroSprite\YVelocity + 2200 * Elapsed
   EndIf
 EndProcedure
 Procedure UpdateSpriteList(List *SpriteList.TSprite(), Elapsed.f)
