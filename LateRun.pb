@@ -16,7 +16,8 @@ Structure TSprite
   Width.u;the original width of the sprite, before zooming
   Height.u;the original height of the sprite, before zooming
   AnimationTimer.f
-  IsVisible.b
+  IsAlive.b
+  ShouldDeallocate.b
   ZoomLevel.f;the actual width or height it must be multiplied by the zoomlevel value
   Update.UpdateSpriteProc;the address of the update procedure that will update sprites positions and velocities, also handles inputs
 EndStructure
@@ -24,13 +25,16 @@ Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.f, SoundInit
 Global NewList *SpriteDisplayList.TSprite(), NewList *SpriteUpdateList.TSprite(), Hero.TSprite;
 Global IsHeroOnGround.b = #True, HeroGroundY.f, HeroJumpTimer.f, IsHeroJumping.b = #False
 #Animation_FPS = 12
-#Hero_Sprite = 1, #Boulder_Sprite_48x48 = 2
-Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.i, SpritePath.s, NumFrames.a, IsVisible.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1)
+#Hero_Sprite = 1 : #Boulder_Sprite_48x48 = 2
+Procedure LoadSprites()
+  LoadSprite(#Hero_Sprite, BasePath + "graphics" + #PS$ + "hero.png")
+  LoadSprite(#Boulder_Sprite_48x48, BasePath + "graphics" + #PS$ + "boulder-48x48.png")
+EndProcedure
+Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.i, NumFrames.a, IsAlive.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1)
   *Sprite\x = x : *Sprite\y = y : *Sprite\XVelocity = XVel : *Sprite\YVelocity = YVel
-  *Sprite\SpriteNum = SpriteNum : *Sprite\IsVisible = IsVisible : *Sprite\ZoomLevel = ZoomLevel
+  *Sprite\SpriteNum = SpriteNum : *Sprite\IsAlive = IsAlive : *Sprite\ZoomLevel = ZoomLevel
   *Sprite\Update = UpdateProc : *Sprite\CurrentFrame = 0 : *Sprite\AnimationTimer = 1 / #Animation_FPS
-  LoadSprite(*Sprite\SpriteNum, SpritePath)
-  *Sprite\NumFrames = NumFrames
+  *Sprite\NumFrames = NumFrames : *Sprite\ShouldDeallocate = #False
   *Sprite\Width = SpriteWidth(*Sprite\SpriteNum) / NumFrames
   *Sprite\Height = SpriteHeight(*Sprite\SpriteNum);we assume all sprite sheets are only one row
 EndProcedure
@@ -55,6 +59,11 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
     *HeroSprite\YVelocity + 2200 * Elapsed
   EndIf
 EndProcedure
+Procedure UpdateObstacle(ObstacleAddress.i, Elapsed.f);obstacles only goes to the left at the given velocity
+  *Obstacle.TSprite = ObstacleAddress : *Obstacle\x + *Obstacle\XVelocity * Elapsed
+  *Obstacle\IsAlive = IIf(Bool(*Obstacle\x < -(*Obstacle\Width * *Obstacle\ZoomLevel)), #False, #True)
+  *Obstacle\ShouldDeallocate = Bool(Not *Obstacle\IsAlive)
+EndProcedure
 Procedure UpdateSpriteList(List *SpriteList.TSprite(), Elapsed.f)
   ForEach *SpriteList()
     *SpriteList()\Update(*SpriteList(), Elapsed)
@@ -75,13 +84,33 @@ EndProcedure
 Procedure AddSpriteToList(*Sprite.TSprite, List *SpriteList.TSprite());general procedure to add TSprites to lists
   AddElement(*SpriteList()) : *SpriteList() = *Sprite
 EndProcedure
+Procedure RemoveSpritesFromList(List *SpriteList.TSprite(), Deallocate.b)
+  ForEach *SpriteList()
+    If Not *SpriteList()\IsAlive
+      If Deallocate
+        FreeStructure(*SpriteList())
+      EndIf
+      DeleteElement(*SpriteList(), #True)
+    EndIf
+  Next
+EndProcedure
 Procedure StartGame();we start a new game here
-  InitializeSprite(Hero, 0, 0, 0, 0, #Hero_Sprite, BasePath + "graphics" + #PS$ + "hero.png", 4, #True, @UpdateHero(), 4)
+  InitializeSprite(Hero, 0, 0, 0, 0, #Hero_Sprite, 4, #True, @UpdateHero(), 4)
   Hero\x = Hero\Width * Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : Hero\y = HeroGroundY;starting position for the hero
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False
   AddSpriteToList(@Hero, *SpriteDisplayList()) : AddSpriteToList(@Hero, *SpriteUpdateList());add to the SpriteDisplayList(to show it on the screen) and SpriteUpdateList (to update it)
 EndProcedure
-
+Procedure UpdateGameLogic(Elapsed.f)
+  Static EnemyTimer.f = 0
+  EnemyTimer + Elapsed
+  If EnemyTimer >= 1.0;adds an enemy every second
+    EnemyTimer = 0.0 : *Boulder.TSprite = AllocateStructure(TSprite)
+    InitializeSprite(*Boulder, 0, 0, -300.0, 0, #Boulder_Sprite_48x48, 1, #True, @UpdateObstacle(), 1)
+    *Boulder\x = ScreenWidth() - (*Boulder\Width * *Boulder\ZoomLevel) : *Boulder\y = HeroGroundY
+    AddSpriteToList(*Boulder, *SpriteDisplayList()) : AddSpriteToList(*Boulder, *SpriteUpdateList())
+  EndIf
+  
+EndProcedure
 If InitSprite() = 0 Or InitKeyboard() = 0
   MessageRequester("Error", "Sprite system or keyboard system can't be initialized", 0)
   End
@@ -89,7 +118,7 @@ EndIf
 UsePNGImageDecoder() : SoundInitiated = InitSound()
 If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_ScreenCentered)
   If OpenWindowedScreen(WindowID(0), 0, 0, 640, 480, 0, 0, 0)
-    StartGame()
+    LoadSprites() : StartGame()
     Repeat
       StartTimeInMs = ElapsedMilliseconds()
       Repeat
@@ -105,8 +134,8 @@ If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_
       ExamineKeyboard()
       ElapsedTimneInS = (ElapsedMilliseconds() - StartTimeInMs) / 1000.0
       ElapsedTimneInS = IIf(Bool(ElapsedTimneInS >= 0.05), 0.05, ElapsedTimneInS)
-      UpdateSpriteList(*SpriteUpdateList(), ElapsedTimneInS)
-      DisplaySpriteList(*SpriteDisplayList(), ElapsedTimneInS)
+      UpdateGameLogic(ElapsedTimneInS) : UpdateSpriteList(*SpriteUpdateList(), ElapsedTimneInS) : DisplaySpriteList(*SpriteDisplayList(), ElapsedTimneInS)
+      RemoveSpritesFromList(*SpriteDisplayList(), #False) : RemoveSpritesFromList(*SpriteUpdateList(), #True)
     Until ExitGame
   EndIf
 EndIf
