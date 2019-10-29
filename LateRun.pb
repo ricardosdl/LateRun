@@ -24,6 +24,8 @@ EndStructure
 Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.f, SoundInitiated.b
 Global NewList *SpriteDisplayList.TSprite(), NewList *SpriteUpdateList.TSprite(), Hero.TSprite;
 Global IsHeroOnGround.b = #True, HeroGroundY.f, HeroJumpTimer.f, IsHeroJumping.b = #False
+Global BaseVelocity.f, ObstaclesVelocity.f, ObstaclesTimer.f, CurrentObstaclesTimer.f, ObstaclesChance.f
+Global Score.f
 #Animation_FPS = 12
 #Hero_Sprite = 1 : #Boulder_Sprite_48x48 = 2
 Procedure LoadSprites()
@@ -94,17 +96,19 @@ Procedure StartGame();we start a new game here
   Hero\x = Hero\Width * Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : Hero\y = HeroGroundY;starting position for the hero
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False
   AddSpriteToList(@Hero, *SpriteDisplayList()) : AddSpriteToList(@Hero, *SpriteUpdateList());add to the SpriteDisplayList(to show it on the screen) and SpriteUpdateList (to update it)
+  BaseVelocity = 1.0 : ObstaclesVelocity = 250.0 : ObstaclesTimer = 0.0 : CurrentObstaclesTimer = 1.5 : ObstaclesChance.f = 0.5
+  Score = 0.0
 EndProcedure
 Procedure UpdateGameLogic(Elapsed.f)
-  Static EnemyTimer.f = 0
-  EnemyTimer + Elapsed
-  If EnemyTimer >= 1.0;adds an enemy every second
-    EnemyTimer = 0.0 : *Boulder.TSprite = AllocateStructure(TSprite)
-    InitializeSprite(*Boulder, 0, 0, -300.0, 0, #Boulder_Sprite_48x48, 1, #True, @UpdateObstacle(), 1)
-    *Boulder\x = ScreenWidth() - (*Boulder\Width * *Boulder\ZoomLevel) : *Boulder\y = HeroGroundY
-    AddSpriteToList(*Boulder, *SpriteDisplayList()) : AddSpriteToList(*Boulder, *SpriteUpdateList())
+  Score + Elapsed : ObstaclesTimer + Elapsed
+  If ObstaclesTimer >= CurrentObstaclesTimer : ObstaclesTimer = 0.0
+    If Random(100, 0) / 100.0 < ObstaclesChance
+      *Boulder.TSprite = AllocateStructure(TSprite)
+      InitializeSprite(*Boulder, 0, 0, -ObstaclesVelocity, 0, #Boulder_Sprite_48x48, 1, #True, @UpdateObstacle(), 1)
+      *Boulder\x = ScreenWidth() - (*Boulder\Width * *Boulder\ZoomLevel) : *Boulder\y = HeroGroundY
+      AddSpriteToList(*Boulder, *SpriteDisplayList()) : AddSpriteToList(*Boulder, *SpriteUpdateList())
+    EndIf
   EndIf
-  
 EndProcedure
 If InitSprite() = 0 Or InitKeyboard() = 0
   MessageRequester("Error", "Sprite system or keyboard system can't be initialized", 0)
