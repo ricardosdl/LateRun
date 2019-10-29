@@ -40,6 +40,7 @@ Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.
   *Sprite\Width = SpriteWidth(*Sprite\SpriteNum) / NumFrames
   *Sprite\Height = SpriteHeight(*Sprite\SpriteNum);we assume all sprite sheets are only one row
 EndProcedure
+Global StartJump.q = 0
 Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero sprite state here
   *HeroSprite.TSprite = HeroSpriteAddress : SpacePushed.b = KeyboardPushed(#PB_Key_Space) : SpaceReleased.b = KeyboardReleased(#PB_Key_Space)
   If (Not IsHeroJumping) And SpacePushed And IsHeroOnGround
@@ -50,12 +51,14 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
     EndHeroJump = #True
   EndIf
   If EndHeroJump;the hero jumped!
-    *HeroSprite\YVelocity = IIf(Bool(HeroJumpTimer >= 0.15), -700.0, -600.0)
+    StartJump = ElapsedMilliseconds()
+    *HeroSprite\YVelocity = IIf(Bool(HeroJumpTimer >= 0.15), -750.0, -600.0)
     IsHeroJumping = #False : HeroJumpTimer = 0.0 : EndHeroJump = #False : IsHeroOnGround = #False
   EndIf
   *HeroSprite\y + *HeroSprite\YVelocity * Elapsed
   If *HeroSprite\y > HeroGroundY
     *HeroSprite\y = HeroGroundY : IsHeroOnGround = #True : *HeroSprite\YVelocity = 0.0
+    Debug ElapsedMilliseconds() - StartJump : StartJump = 0
   EndIf
   If Not IsHeroOnGround;kind like gravity here
     *HeroSprite\YVelocity + 2200 * Elapsed
@@ -134,6 +137,7 @@ If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_
       ElapsedTimneInS = (ElapsedMilliseconds() - StartTimeInMs) / 1000.0
       ElapsedTimneInS = IIf(Bool(ElapsedTimneInS >= 0.05), 0.05, ElapsedTimneInS)
       UpdateGameLogic(ElapsedTimneInS) : UpdateSpriteList(*SpriteUpdateList(), ElapsedTimneInS) : DisplaySpriteList(*SpriteDisplayList(), ElapsedTimneInS)
+      ;Delay(5)
       RemoveSpritesFromList(*SpriteDisplayList(), #False) : RemoveSpritesFromList(*SpriteUpdateList(), #True)
     Until ExitGame
   EndIf
