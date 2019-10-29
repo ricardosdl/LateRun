@@ -62,12 +62,10 @@ EndProcedure
 Procedure UpdateObstacle(ObstacleAddress.i, Elapsed.f);obstacles only goes to the left at the given velocity
   *Obstacle.TSprite = ObstacleAddress : *Obstacle\x + *Obstacle\XVelocity * Elapsed
   *Obstacle\IsAlive = IIf(Bool(*Obstacle\x < -(*Obstacle\Width * *Obstacle\ZoomLevel)), #False, #True)
-  *Obstacle\ShouldDeallocate = Bool(Not *Obstacle\IsAlive)
+  *Obstacle\ShouldDeallocate = Bool(Not *Obstacle\IsAlive);obstacles are allocated dynamically so we should deallocate
 EndProcedure
 Procedure UpdateSpriteList(List *SpriteList.TSprite(), Elapsed.f)
-  ForEach *SpriteList()
-    *SpriteList()\Update(*SpriteList(), Elapsed)
-  Next
+  ForEach *SpriteList() : *SpriteList()\Update(*SpriteList(), Elapsed) : Next
 EndProcedure
 Procedure DisplaySpriteList(List *SpriteList.TSprite(), Elapsed.f)
   ForEach *SpriteList()
@@ -86,10 +84,7 @@ Procedure AddSpriteToList(*Sprite.TSprite, List *SpriteList.TSprite());general p
 EndProcedure
 Procedure RemoveSpritesFromList(List *SpriteList.TSprite(), Deallocate.b)
   ForEach *SpriteList()
-    If Not *SpriteList()\IsAlive
-      If Deallocate
-        FreeStructure(*SpriteList())
-      EndIf
+    If Not *SpriteList()\IsAlive : If Deallocate : FreeStructure(*SpriteList()) : EndIf
       DeleteElement(*SpriteList(), #True)
     EndIf
   Next
