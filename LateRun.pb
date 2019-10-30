@@ -22,15 +22,12 @@ Global IsHeroOnGround.b = #True, HeroGroundY.f, HeroJumpTimer.f, IsHeroJumping.b
 Global BaseVelocity.f, ObstaclesVelocity.f, ObstaclesTimer.f, CurrentObstaclesTimer.f, ObstaclesChance.f
 Global Score.f
 #Animation_FPS = 12
-#Hero_Sprite = 1 : #Boulder_Sprite_48x48 = 2 : #Dog_Sprite_48x27 = 3
-Procedure LoadSprites()
-  LoadSprite(#Hero_Sprite, BasePath + "graphics" + #PS$ + "hero.png")
-  LoadSprite(#Boulder_Sprite_48x48, BasePath + "graphics" + #PS$ + "boulder-48x48.png")
-  LoadSprite(#Dog_Sprite_48x27, BasePath + "graphics" + #PS$ + "dog-48x27-transparent.png")
-EndProcedure
-Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.i, NumFrames.a, IsAlive.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1)
+Global Hero_Sprite_Path.s = BasePath + "graphics" + #PS$ + "hero.png"
+Global Dog_Sprite_Path.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent.png"
+Global Boulder_Sprite_Path.s = BasePath + "graphics" + #PS$ + "boulder-48x48.png"
+Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpritePath.s, NumFrames.a, IsAlive.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1)
   *Sprite\x = x : *Sprite\y = y : *Sprite\XVelocity = XVel : *Sprite\YVelocity = YVel
-  *Sprite\SpriteNum = SpriteNum : *Sprite\IsAlive = IsAlive : *Sprite\ZoomLevel = ZoomLevel
+  *Sprite\SpriteNum = LoadSprite(#PB_Any, SpritePath) : *Sprite\IsAlive = IsAlive : *Sprite\ZoomLevel = ZoomLevel
   *Sprite\Update = UpdateProc : *Sprite\CurrentFrame = 0 : *Sprite\AnimationTimer = 1 / #Animation_FPS
   *Sprite\NumFrames = NumFrames : *Sprite\Width = SpriteWidth(*Sprite\SpriteNum) / NumFrames
   *Sprite\Height = SpriteHeight(*Sprite\SpriteNum);we assume all sprite sheets are only one row
@@ -77,17 +74,20 @@ Procedure DisplaySpriteList(List SpriteList.TSprite(), Elapsed.f)
       SpriteList()\AnimationTimer = 1 / #Animation_FPS
     EndIf
     SpriteList()\AnimationTimer - Elapsed;run the timer to get to the next frame
-    DisplaySprite(SpriteList()\SpriteNum, SpriteList()\x, SpriteList()\y)
+    DisplayTransparentSprite(SpriteList()\SpriteNum, SpriteList()\x, SpriteList()\y)
   Next
 EndProcedure
 Procedure RemoveSpritesFromList(List SpriteList.TSprite())
   ForEach SpriteList()
-    If Not SpriteList()\IsAlive : DeleteElement(SpriteList(), #True) : EndIf
+    If Not SpriteList()\IsAlive
+      FreeSprite(SpriteList()\SpriteNum)
+      DeleteElement(SpriteList(), #True)
+    EndIf
   Next
 EndProcedure
 Procedure StartGame();we start a new game here
   AddElement(SpriteList()) : *Hero = @SpriteList()
-  InitializeSprite(*Hero, 0, 0, 0, 0, #Hero_Sprite, 4, #True, @UpdateHero(), 4)
+  InitializeSprite(*Hero, 0, 0, 0, 0, Hero_Sprite_Path, 4, #True, @UpdateHero(), 4)
   *Hero\x = *Hero\Width * *Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : *Hero\y = HeroGroundY;starting position for the hero
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False
   BaseVelocity = 1.0 : ObstaclesVelocity = 250.0 : ObstaclesTimer = 0.0 : CurrentObstaclesTimer = 1.5 : ObstaclesChance.f = 0.5
@@ -99,10 +99,10 @@ Procedure UpdateGameLogic(Elapsed.f)
     If Random(100, 0) / 100.0 < ObstaclesChance
       AddElement(SpriteList())
       If Random(100, 0) / 100.0 < 0.5
-        InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity, 0, #Boulder_Sprite_48x48, 1, #True, @UpdateObstacle(), 1)
+        InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity, 0, Boulder_Sprite_Path, 1, #True, @UpdateObstacle(), 1)
         SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = HeroGroundY
       Else
-        InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity, 0, #Dog_Sprite_48x27, 3, #True, @UpdateObstacle(), 1)
+        InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity, 0, Dog_Sprite_Path, 3, #True, @UpdateObstacle(), 1)
         SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = HeroGroundY
       EndIf
     EndIf
@@ -115,7 +115,7 @@ EndIf
 UsePNGImageDecoder() : SoundInitiated = InitSound()
 If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_ScreenCentered)
   If OpenWindowedScreen(WindowID(0), 0, 0, 640, 480, 0, 0, 0)
-    LoadSprites() : StartGame()
+    StartGame()
     Repeat
       StartTimeInMs = ElapsedMilliseconds()
       Repeat
@@ -132,7 +132,6 @@ If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_
       ElapsedTimneInS = (ElapsedMilliseconds() - StartTimeInMs) / 1000.0
       ElapsedTimneInS = IIf(Bool(ElapsedTimneInS >= 0.05), 0.05, ElapsedTimneInS)
       UpdateGameLogic(ElapsedTimneInS) : UpdateSpriteList(SpriteList(), ElapsedTimneInS) : DisplaySpriteList(SpriteList(), ElapsedTimneInS)
-      ;Delay(5)
       RemoveSpritesFromList(SpriteList())
     Until ExitGame
   EndIf
