@@ -4,23 +4,20 @@
 EndProcedure
 Prototype UpdateSpriteProc(SpriteAddress.i, Elapsed.f);our prototype procedure that each sprite can call to update itself
 Structure TSprite
-  x.f
-  y.f
-  XVelocity.f
-  YVelocity.f
+  x.f : y.f;position
+  XVelocity.f : YVelocity.f;velociy in each axis
   SpriteNum.i
-  NumFrames.a
-  CurrentFrame.a
+  NumFrames.a : CurrentFrame.a
   Width.u;the original width of the sprite, before zooming
   Height.u;the original height of the sprite, before zooming
   AnimationTimer.f
   IsAlive.b
-  ShouldDeallocate.b
+  DrawOrder.u;the sprites with lower draw order must be drawn first
   ZoomLevel.f;the actual width or height it must be multiplied by the zoomlevel value
   Update.UpdateSpriteProc;the address of the update procedure that will update sprites positions and velocities, also handles inputs
 EndStructure
 Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.f, SoundInitiated.b
-Global NewList *SpriteDisplayList.TSprite(), NewList *SpriteUpdateList.TSprite(), Hero.TSprite;
+Global NewList SpriteList.TSprite(), *Hero.TSprite;
 Global IsHeroOnGround.b = #True, HeroGroundY.f, HeroJumpTimer.f, IsHeroJumping.b = #False
 Global BaseVelocity.f, ObstaclesVelocity.f, ObstaclesTimer.f, CurrentObstaclesTimer.f, ObstaclesChance.f
 Global Score.f
@@ -34,8 +31,7 @@ Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.
   *Sprite\x = x : *Sprite\y = y : *Sprite\XVelocity = XVel : *Sprite\YVelocity = YVel
   *Sprite\SpriteNum = SpriteNum : *Sprite\IsAlive = IsAlive : *Sprite\ZoomLevel = ZoomLevel
   *Sprite\Update = UpdateProc : *Sprite\CurrentFrame = 0 : *Sprite\AnimationTimer = 1 / #Animation_FPS
-  *Sprite\NumFrames = NumFrames : *Sprite\ShouldDeallocate = #False
-  *Sprite\Width = SpriteWidth(*Sprite\SpriteNum) / NumFrames
+  *Sprite\NumFrames = NumFrames : *Sprite\Width = SpriteWidth(*Sprite\SpriteNum) / NumFrames
   *Sprite\Height = SpriteHeight(*Sprite\SpriteNum);we assume all sprite sheets are only one row
 EndProcedure
 Global StartJump.q = 0, LowestHeroY.f = 1000
@@ -67,38 +63,32 @@ EndProcedure
 Procedure UpdateObstacle(ObstacleAddress.i, Elapsed.f);obstacles only goes to the left at the given velocity
   *Obstacle.TSprite = ObstacleAddress : *Obstacle\x + *Obstacle\XVelocity * Elapsed
   *Obstacle\IsAlive = IIf(Bool(*Obstacle\x < -(*Obstacle\Width * *Obstacle\ZoomLevel)), #False, #True)
-  *Obstacle\ShouldDeallocate = Bool(Not *Obstacle\IsAlive);obstacles are allocated dynamically so we should deallocate
 EndProcedure
-Procedure UpdateSpriteList(List *SpriteList.TSprite(), Elapsed.f)
-  ForEach *SpriteList() : *SpriteList()\Update(*SpriteList(), Elapsed) : Next
+Procedure UpdateSpriteList(List SpriteList.TSprite(), Elapsed.f)
+  ForEach SpriteList() : SpriteList()\Update(@SpriteList(), Elapsed) : Next
 EndProcedure
-Procedure DisplaySpriteList(List *SpriteList.TSprite(), Elapsed.f)
-  ForEach *SpriteList()
-    ClipSprite(*SpriteList()\SpriteNum, *SpriteList()\CurrentFrame * *SpriteList()\Width, 0, *SpriteList()\Width, *SpriteList()\Height);here we clip the current frame that we want to display
-    ZoomSprite(*SpriteList()\SpriteNum, *SpriteList()\Width * *SpriteList()\ZoomLevel, *SpriteList()\Height * *SpriteList()\ZoomLevel);the zoom must be applied after the clipping(https://www.purebasic.fr/english/viewtopic.php?p=421807#p421807)
-    If *SpriteList()\AnimationTimer <= 0.0;time to change frames and reset the animation timer
-      *SpriteList()\CurrentFrame = IIf(Bool(*SpriteList()\CurrentFrame + 1 > *SpriteList()\NumFrames - 1), 0, *SpriteList()\CurrentFrame + 1)
-      *SpriteList()\AnimationTimer = 1 / #Animation_FPS
+Procedure DisplaySpriteList(List SpriteList.TSprite(), Elapsed.f)
+  ForEach SpriteList()
+    ClipSprite(SpriteList()\SpriteNum, SpriteList()\CurrentFrame * SpriteList()\Width, 0, SpriteList()\Width, SpriteList()\Height);here we clip the current frame that we want to display
+    ZoomSprite(SpriteList()\SpriteNum, SpriteList()\Width * SpriteList()\ZoomLevel, SpriteList()\Height * SpriteList()\ZoomLevel);the zoom must be applied after the clipping(https://www.purebasic.fr/english/viewtopic.php?p=421807#p421807)
+    If SpriteList()\AnimationTimer <= 0.0;time to change frames and reset the animation timer
+      SpriteList()\CurrentFrame = IIf(Bool(SpriteList()\CurrentFrame + 1 > SpriteList()\NumFrames - 1), 0, SpriteList()\CurrentFrame + 1)
+      SpriteList()\AnimationTimer = 1 / #Animation_FPS
     EndIf
-    *SpriteList()\AnimationTimer - Elapsed;run the timer to get to the next frame
-    DisplaySprite(*SpriteList()\SpriteNum, *SpriteList()\x, *SpriteList()\y)
+    SpriteList()\AnimationTimer - Elapsed;run the timer to get to the next frame
+    DisplaySprite(SpriteList()\SpriteNum, SpriteList()\x, SpriteList()\y)
   Next
 EndProcedure
-Procedure AddSpriteToList(*Sprite.TSprite, List *SpriteList.TSprite());general procedure to add TSprites to lists
-  AddElement(*SpriteList()) : *SpriteList() = *Sprite
-EndProcedure
-Procedure RemoveSpritesFromList(List *SpriteList.TSprite(), Deallocate.b)
-  ForEach *SpriteList()
-    If Not *SpriteList()\IsAlive : If Deallocate : FreeStructure(*SpriteList()) : EndIf
-      DeleteElement(*SpriteList(), #True)
-    EndIf
+Procedure RemoveSpritesFromList(List SpriteList.TSprite())
+  ForEach SpriteList()
+    If Not SpriteList()\IsAlive : DeleteElement(SpriteList(), #True) : EndIf
   Next
 EndProcedure
 Procedure StartGame();we start a new game here
-  InitializeSprite(Hero, 0, 0, 0, 0, #Hero_Sprite, 4, #True, @UpdateHero(), 4)
-  Hero\x = Hero\Width * Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : Hero\y = HeroGroundY;starting position for the hero
+  AddElement(SpriteList()) : *Hero = @SpriteList()
+  InitializeSprite(*Hero, 0, 0, 0, 0, #Hero_Sprite, 4, #True, @UpdateHero(), 4)
+  *Hero\x = *Hero\Width * *Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : *Hero\y = HeroGroundY;starting position for the hero
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False
-  AddSpriteToList(@Hero, *SpriteDisplayList()) : AddSpriteToList(@Hero, *SpriteUpdateList());add to the SpriteDisplayList(to show it on the screen) and SpriteUpdateList (to update it)
   BaseVelocity = 1.0 : ObstaclesVelocity = 250.0 : ObstaclesTimer = 0.0 : CurrentObstaclesTimer = 1.5 : ObstaclesChance.f = 0.5
   Score = 0.0
 EndProcedure
@@ -106,10 +96,9 @@ Procedure UpdateGameLogic(Elapsed.f)
   Score + Elapsed : ObstaclesTimer + Elapsed
   If ObstaclesTimer >= CurrentObstaclesTimer : ObstaclesTimer = 0.0
     If Random(100, 0) / 100.0 < ObstaclesChance
-      *Boulder.TSprite = AllocateStructure(TSprite)
-      InitializeSprite(*Boulder, 0, 0, -ObstaclesVelocity, 0, #Boulder_Sprite_48x48, 1, #True, @UpdateObstacle(), 1)
-      *Boulder\x = ScreenWidth() - (*Boulder\Width * *Boulder\ZoomLevel) : *Boulder\y = HeroGroundY
-      AddSpriteToList(*Boulder, *SpriteDisplayList()) : AddSpriteToList(*Boulder, *SpriteUpdateList())
+      AddElement(SpriteList())
+      InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity, 0, #Boulder_Sprite_48x48, 1, #True, @UpdateObstacle(), 1)
+      SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = HeroGroundY
     EndIf
   EndIf
 EndProcedure
@@ -136,9 +125,9 @@ If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_
       ExamineKeyboard()
       ElapsedTimneInS = (ElapsedMilliseconds() - StartTimeInMs) / 1000.0
       ElapsedTimneInS = IIf(Bool(ElapsedTimneInS >= 0.05), 0.05, ElapsedTimneInS)
-      UpdateGameLogic(ElapsedTimneInS) : UpdateSpriteList(*SpriteUpdateList(), ElapsedTimneInS) : DisplaySpriteList(*SpriteDisplayList(), ElapsedTimneInS)
+      UpdateGameLogic(ElapsedTimneInS) : UpdateSpriteList(SpriteList(), ElapsedTimneInS) : DisplaySpriteList(SpriteList(), ElapsedTimneInS)
       ;Delay(5)
-      RemoveSpritesFromList(*SpriteDisplayList(), #False) : RemoveSpritesFromList(*SpriteUpdateList(), #True)
+      RemoveSpritesFromList(SpriteList())
     Until ExitGame
   EndIf
 EndIf
