@@ -1,7 +1,5 @@
 ﻿Procedure.f IIf(Test.b, ValTrue.f, ValFalse.f);classic vb function, helps us to save some lines in if else endif fragments
-  If Test
-    ProcedureReturn ValTrue
-  EndIf
+  If Test : ProcedureReturn ValTrue : EndIf
   ProcedureReturn ValFalse
 EndProcedure
 Prototype UpdateSpriteProc(SpriteAddress.i, Elapsed.f);our prototype procedure that each sprite can call to update itself
@@ -40,7 +38,7 @@ Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.
   *Sprite\Width = SpriteWidth(*Sprite\SpriteNum) / NumFrames
   *Sprite\Height = SpriteHeight(*Sprite\SpriteNum);we assume all sprite sheets are only one row
 EndProcedure
-Global StartJump.q = 0
+Global StartJump.q = 0, LowestHeroY.f = 1000
 Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero sprite state here
   *HeroSprite.TSprite = HeroSpriteAddress : SpacePushed.b = KeyboardPushed(#PB_Key_Space) : SpaceReleased.b = KeyboardReleased(#PB_Key_Space)
   If (Not IsHeroJumping) And SpacePushed And IsHeroOnGround
@@ -56,9 +54,11 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
     IsHeroJumping = #False : HeroJumpTimer = 0.0 : EndHeroJump = #False : IsHeroOnGround = #False
   EndIf
   *HeroSprite\y + *HeroSprite\YVelocity * Elapsed
+  LowestHeroY = IIf(Bool(*HeroSprite\y < LowestHeroY), *HeroSprite\y, LowestHeroY)
   If *HeroSprite\y > HeroGroundY
     *HeroSprite\y = HeroGroundY : IsHeroOnGround = #True : *HeroSprite\YVelocity = 0.0
-    Debug ElapsedMilliseconds() - StartJump : StartJump = 0
+    Debug "Jump time:" + Str(ElapsedMilliseconds() - StartJump) : StartJump = 0
+    Debug "Lowest Y:" + StrF(LowestHeroY) : LowestHeroY = 1000
   EndIf
   If Not IsHeroOnGround;kind like gravity here
     *HeroSprite\YVelocity + 2200 * Elapsed
