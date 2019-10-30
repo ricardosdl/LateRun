@@ -22,10 +22,11 @@ Global IsHeroOnGround.b = #True, HeroGroundY.f, HeroJumpTimer.f, IsHeroJumping.b
 Global BaseVelocity.f, ObstaclesVelocity.f, ObstaclesTimer.f, CurrentObstaclesTimer.f, ObstaclesChance.f
 Global Score.f
 #Animation_FPS = 12
-#Hero_Sprite = 1 : #Boulder_Sprite_48x48 = 2
+#Hero_Sprite = 1 : #Boulder_Sprite_48x48 = 2 : #Dog_Sprite_48x27 = 3
 Procedure LoadSprites()
   LoadSprite(#Hero_Sprite, BasePath + "graphics" + #PS$ + "hero.png")
   LoadSprite(#Boulder_Sprite_48x48, BasePath + "graphics" + #PS$ + "boulder-48x48.png")
+  LoadSprite(#Dog_Sprite_48x27, BasePath + "graphics" + #PS$ + "dog-48x27-transparent.png")
 EndProcedure
 Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpriteNum.i, NumFrames.a, IsAlive.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1)
   *Sprite\x = x : *Sprite\y = y : *Sprite\XVelocity = XVel : *Sprite\YVelocity = YVel
@@ -97,8 +98,13 @@ Procedure UpdateGameLogic(Elapsed.f)
   If ObstaclesTimer >= CurrentObstaclesTimer : ObstaclesTimer = 0.0
     If Random(100, 0) / 100.0 < ObstaclesChance
       AddElement(SpriteList())
-      InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity, 0, #Boulder_Sprite_48x48, 1, #True, @UpdateObstacle(), 1)
-      SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = HeroGroundY
+      If Random(100, 0) / 100.0 < 0.5
+        InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity, 0, #Boulder_Sprite_48x48, 1, #True, @UpdateObstacle(), 1)
+        SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = HeroGroundY
+      Else
+        InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity, 0, #Dog_Sprite_48x27, 3, #True, @UpdateObstacle(), 1)
+        SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = HeroGroundY
+      EndIf
     EndIf
   EndIf
 EndProcedure
