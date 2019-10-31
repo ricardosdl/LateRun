@@ -99,14 +99,20 @@ Procedure UpdateGameLogic(Elapsed.f)
     If Random(100, 0) / 100.0 < ObstaclesChance
       AddElement(SpriteList())
       If Random(100, 0) / 100.0 < 0.5
-        InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity, 0, Boulder_Sprite_Path, 1, #True, @UpdateObstacle(), 1)
+        InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Boulder_Sprite_Path, 1, #True, @UpdateObstacle(), 1)
         SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = HeroGroundY
       Else
-        InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity, 0, Dog_Sprite_Path, 3, #True, @UpdateObstacle(), 1)
+        InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Dog_Sprite_Path, 3, #True, @UpdateObstacle(), 1)
         SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel) - (SpriteList()\Height * SpriteList()\ZoomLevel)
       EndIf
     EndIf
   EndIf
+EndProcedure
+Procedure DrawHUD()
+  StartDrawing(ScreenOutput())
+  ScoreText.s = Str(Round(Score, #PB_Round_Nearest))
+  ScoreXPos.f = ScreenWidth() / 2 - TextWidth(ScoreText) / 2
+  DrawText(ScoreXPos, 10, ScoreText, RGB(245, 245, 245)) : StopDrawing()
 EndProcedure
 If InitSprite() = 0 Or InitKeyboard() = 0
   MessageRequester("Error", "Sprite system or keyboard system can't be initialized", 0)
@@ -132,6 +138,7 @@ If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_
       ElapsedTimneInS = (ElapsedMilliseconds() - StartTimeInMs) / 1000.0
       ElapsedTimneInS = IIf(Bool(ElapsedTimneInS >= 0.05), 0.05, ElapsedTimneInS)
       UpdateGameLogic(ElapsedTimneInS) : UpdateSpriteList(SpriteList(), ElapsedTimneInS) : DisplaySpriteList(SpriteList(), ElapsedTimneInS)
+      DrawHUD()
       RemoveSpritesFromList(SpriteList())
     Until ExitGame
   EndIf
