@@ -21,7 +21,7 @@ Global NewList SpriteList.TSprite(), *Hero.TSprite;
 Global IsHeroOnGround.b = #True, HeroGroundY.f, HeroJumpTimer.f, IsHeroJumping.b = #False
 Global BaseVelocity.f, ObstaclesVelocity.f, ObstaclesTimer.f, CurrentObstaclesTimer.f, ObstaclesChance.f
 Global Score.f
-#Animation_FPS = 12
+#Animation_FPS = 12 : #Bitmap_Font_Sprite = 0
 Global Hero_Sprite_Path.s = BasePath + "graphics" + #PS$ + "hero.png"
 Global Dog_Sprite_Path.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent.png"
 Global Boulder_Sprite_Path.s = BasePath + "graphics" + #PS$ + "boulder-48x48.png"
@@ -91,7 +91,7 @@ Procedure StartGame();we start a new game here
   *Hero\x = *Hero\Width * *Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : *Hero\y = HeroGroundY;starting position for the hero
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False
   BaseVelocity = 1.0 : ObstaclesVelocity = 250.0 : ObstaclesTimer = 0.0 : CurrentObstaclesTimer = 1.5 : ObstaclesChance.f = 0.5
-  Score = 0.0
+  Score = 0.0 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
 EndProcedure
 Procedure UpdateGameLogic(Elapsed.f)
   Score + Elapsed : ObstaclesTimer + Elapsed
@@ -108,11 +108,18 @@ Procedure UpdateGameLogic(Elapsed.f)
     EndIf
   EndIf
 EndProcedure
+Procedure DrawBitmapText(x.f, y.f, Text.s);draw text is too slow on linux, let's try to use bitmap fonts
+  For i.i = 1 To Len(Text);loop the string Text char by char
+    Debug Mid(Text, i, 1)
+  Next i
+EndProcedure
 Procedure DrawHUD()
+  Start.q = ElapsedMilliseconds()
   StartDrawing(ScreenOutput())
   ScoreText.s = Str(Round(Score, #PB_Round_Nearest))
   ScoreXPos.f = ScreenWidth() / 2 - TextWidth(ScoreText) / 2
   DrawText(ScoreXPos, 10, ScoreText, RGB(245, 245, 245)) : StopDrawing()
+  Debug ElapsedMilliseconds() - Start
 EndProcedure
 If InitSprite() = 0 Or InitKeyboard() = 0
   MessageRequester("Error", "Sprite system or keyboard system can't be initialized", 0)
