@@ -44,7 +44,7 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
   EndIf
   If EndHeroJump;the hero jumped!
     StartJump = ElapsedMilliseconds()
-    *HeroSprite\YVelocity = IIf(Bool(HeroJumpTimer >= 0.15), -750.0, -600.0)
+    *HeroSprite\YVelocity = IIf(Bool(HeroJumpTimer >= 0.15), -750.0, -650.0)
     IsHeroJumping = #False : HeroJumpTimer = 0.0 : EndHeroJump = #False : IsHeroOnGround = #False
   EndIf
   *HeroSprite\y + *HeroSprite\YVelocity * Elapsed
@@ -103,7 +103,7 @@ Procedure UpdateGameLogic(Elapsed.f)
         SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = HeroGroundY
       Else
         InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity, 0, Dog_Sprite_Path, 3, #True, @UpdateObstacle(), 1)
-        SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = HeroGroundY
+        SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel) - (SpriteList()\Height * SpriteList()\ZoomLevel)
       EndIf
     EndIf
   EndIf
