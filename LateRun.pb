@@ -110,16 +110,14 @@ Procedure UpdateGameLogic(Elapsed.f)
 EndProcedure
 Procedure DrawBitmapText(x.f, y.f, Text.s);draw text is too slow on linux, let's try to use bitmap fonts
   For i.i = 1 To Len(Text);loop the string Text char by char
-    Debug Mid(Text, i, 1)
+    AsciiValue.a = Asc(Mid(Text, i, 1))
+    ClipSprite(#Bitmap_Font_Sprite, (AsciiValue - 32) % 16 * 8, (AsciiValue - 32) / 16 * 12, 8, 12)
+    ZoomSprite(#Bitmap_Font_Sprite, 16, 24)
+    DisplayTransparentSprite(#Bitmap_Font_Sprite, x + (i - 1) * 16, y)
   Next i
 EndProcedure
 Procedure DrawHUD()
-  Start.q = ElapsedMilliseconds()
-  StartDrawing(ScreenOutput())
-  ScoreText.s = Str(Round(Score, #PB_Round_Nearest))
-  ScoreXPos.f = ScreenWidth() / 2 - TextWidth(ScoreText) / 2
-  DrawText(ScoreXPos, 10, ScoreText, RGB(245, 245, 245)) : StopDrawing()
-  Debug ElapsedMilliseconds() - Start
+  DrawBitmapText(ScreenWidth() / 2, 10, Str(Round(Score * 10, #PB_Round_Nearest)));score
 EndProcedure
 If InitSprite() = 0 Or InitKeyboard() = 0
   MessageRequester("Error", "Sprite system or keyboard system can't be initialized", 0)
