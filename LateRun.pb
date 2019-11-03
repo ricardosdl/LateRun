@@ -16,7 +16,7 @@ Structure TSprite
   ZoomLevel.f;the actual width or height it must be multiplied by the zoomlevel value
   Update.UpdateSpriteProc;the address of the update procedure that will update sprites positions and velocities, also handles inputs
 EndStructure
-Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.f, SoundInitiated.b
+Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.q, SoundInitiated.b
 Global NewList SpriteList.TSprite(), *Hero.TSprite;
 Global IsHeroOnGround.b = #True, HeroGroundY.f, HeroJumpTimer.f, IsHeroJumping.b = #False
 Global BaseVelocity.f, ObstaclesVelocity.f, ObstaclesTimer.f, CurrentObstaclesTimer.f, ObstaclesChance.f
