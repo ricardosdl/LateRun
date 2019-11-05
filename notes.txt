@@ -3,3 +3,7 @@ https://opengameart.org/content/lo-res-2d-platformer-graphics
 https://opengameart.org/content/basic-boulder
 https://opengameart.org/content/dog-run-stand-pee-6frames-46x27
 https://opengameart.org/content/bitmap-font
+https://opengameart.org/content/beastlands
+=====maybe use these
+https://opengameart.org/content/witch-on-broomstick
+https://opengameart.org/content/animated-birds-32x32
