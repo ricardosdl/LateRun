@@ -111,7 +111,6 @@ Procedure UpdateGameLogic(Elapsed.f)
         InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, 1, #True, @UpdateObstacle(), 1)
         SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = HeroBottom - (SpriteList()\Height * SpriteList()\ZoomLevel)
       Else
-        Debug "bird"
         InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Bird_Sprite_Path, 5, #True, @UpdateObstacle(), 1)
         SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = Random(HeroBottom - (SpriteList()\Height * SpriteList()\ZoomLevel), HeroGroundY - (*Hero\Height * *Hero\ZoomLevel))
       EndIf
