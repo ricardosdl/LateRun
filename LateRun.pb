@@ -26,6 +26,7 @@ Global Hero_Sprite_Path.s = BasePath + "graphics" + #PS$ + "hero.png"
 Global Dog_Sprite_Path.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent.png"
 Global Boulder_Sprite_Path.s = BasePath + "graphics" + #PS$ + "boulder-48x48.png"
 Global Fence_Sprite_Path.s = BasePath + "graphics" + #PS$ + "fence-16x24.png"
+Global Bird_Sprite_Path.s = BasePath + "graphics" + #PS$ + "bird-32x32.png"
 Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpritePath.s, NumFrames.a, IsAlive.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1)
   *Sprite\x = x : *Sprite\y = y : *Sprite\XVelocity = XVel : *Sprite\YVelocity = YVel
   *Sprite\SpriteNum = LoadSprite(#PB_Any, SpritePath) : *Sprite\IsAlive = IsAlive : *Sprite\ZoomLevel = ZoomLevel
@@ -99,15 +100,20 @@ Procedure UpdateGameLogic(Elapsed.f)
   If ObstaclesTimer >= CurrentObstaclesTimer : ObstaclesTimer = 0.0
     If Random(100, 0) / 100.0 < ObstaclesChance
       AddElement(SpriteList()) : RandomValue.f = Random(100, 0) / 100.0
-      If RandomValue < 0.33
+      HeroBottom.f = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel)
+      If RandomValue < 0.25
         InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Boulder_Sprite_Path, 1, #True, @UpdateObstacle(), 1)
         SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = HeroGroundY
-      ElseIf RandomValue < 0.66
+      ElseIf RandomValue < 0.5
         InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Dog_Sprite_Path, 3, #True, @UpdateObstacle(), 1)
-        SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel) - (SpriteList()\Height * SpriteList()\ZoomLevel)
-      Else
+        SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = HeroBottom - (SpriteList()\Height * SpriteList()\ZoomLevel)
+      ElseIf RandomValue < 0.75
         InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, 1, #True, @UpdateObstacle(), 1)
-        SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel) - (SpriteList()\Height * SpriteList()\ZoomLevel)
+        SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = HeroBottom - (SpriteList()\Height * SpriteList()\ZoomLevel)
+      Else
+        Debug "bird"
+        InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Bird_Sprite_Path, 5, #True, @UpdateObstacle(), 1)
+        SpriteList()\x = ScreenWidth() - (SpriteList()\Width * SpriteList()\ZoomLevel) : SpriteList()\y = Random(HeroBottom - (SpriteList()\Height * SpriteList()\ZoomLevel), HeroGroundY - (*Hero\Height * *Hero\ZoomLevel))
       EndIf
     EndIf
   EndIf
