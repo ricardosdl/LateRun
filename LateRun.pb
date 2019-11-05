@@ -18,7 +18,7 @@ Structure TSprite
 EndStructure
 Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.q, SoundInitiated.b
 Global NewList SpriteList.TSprite(), *Hero.TSprite;
-Global IsHeroOnGround.b = #True, HeroGroundY.f, HeroJumpTimer.f, IsHeroJumping.b = #False
+Global HeroDistanceFromScreenEdge.f, IsHeroOnGround.b = #True, HeroGroundY.f, HeroJumpTimer.f, IsHeroJumping.b = #False
 Global BaseVelocity.f, ObstaclesVelocity.f, ObstaclesTimer.f, CurrentObstaclesTimer.f, ObstaclesChance.f
 Global Score.f
 #Animation_FPS = 12 : #Bitmap_Font_Sprite = 0
@@ -91,6 +91,7 @@ Procedure StartGame();we start a new game here
   AddElement(SpriteList()) : *Hero = @SpriteList()
   InitializeSprite(*Hero, 0, 0, 0, 0, Hero_Sprite_Path, 4, #True, @UpdateHero(), 4)
   *Hero\x = *Hero\Width * *Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : *Hero\y = HeroGroundY;starting position for the hero
+  HeroDistanceFromScreenEdge = ScreenWidth() - (*Hero\x + *Hero\Width * *Hero\ZoomLevel)
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False
   BaseVelocity = 1.0 : ObstaclesVelocity = 250.0 : ObstaclesTimer = 0.0 : CurrentObstaclesTimer = 1.5 : ObstaclesChance.f = 0.5
   Score = 0.0 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
