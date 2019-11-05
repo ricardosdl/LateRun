@@ -7,3 +7,25 @@ https://opengameart.org/content/beastlands
 https://opengameart.org/content/animated-birds-32x32
 =====maybe use these
 https://opengameart.org/content/witch-on-broomstick
+
+==code to store the enemies patterns
+EnemiesGroups.s = "FF,R,R;FF,R,D;FFF,F,D,D;F,D,R;RR,FF,D"
+;Enemies.s = "FF,R,R"
+
+QtdEnemiesGroups.b = CountString(EnemiesGroups, ";") + 1
+Debug QtdEnemiesGroups
+
+; For k = 1 To 6
+;   Debug StringField("Hello I am a splitted string", k, " ")
+; Next
+
+For k = 1 To QtdEnemiesGroups
+  EnemyGroup.s = StringField(EnemiesGroups, k, ";")
+  QtdEnemies.b = CountString(EnemyGroup, ",") + 1
+  For j = 1 To QtdEnemies
+    Enemies.s = StringField(EnemyGroup, j, ",")
+    Debug Enemies
+                          ;Debug StringField("Hello I am a splitted string", k, " ")
+  Next
+  
+Next
