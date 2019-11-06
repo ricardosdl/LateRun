@@ -54,19 +54,31 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
   LowestHeroY = IIf(Bool(*HeroSprite\y < LowestHeroY), *HeroSprite\y, LowestHeroY)
   If *HeroSprite\y > HeroGroundY
     *HeroSprite\y = HeroGroundY : IsHeroOnGround = #True : *HeroSprite\YVelocity = 0.0
-    Debug "Jump time:" + Str(ElapsedMilliseconds() - StartJump) : StartJump = 0
-    Debug "Lowest Y:" + StrF(LowestHeroY) : LowestHeroY = 1000
+    ;Debug "Jump time:" + Str(ElapsedMilliseconds() - StartJump) : StartJump = 0
+    ;Debug "Lowest Y:" + StrF(LowestHeroY) : LowestHeroY = 1000
   EndIf
   If Not IsHeroOnGround;kind like gravity here
     *HeroSprite\YVelocity + 2200 * Elapsed
   EndIf
+  ForEach SpriteList()
+    If SpriteList()\IsObstacle
+      If SpriteCollision(*Hero\SpriteNum, *Hero\x, *Hero\y, SpriteList()\SpriteNum, SpriteList()\x, SpriteList()\y)
+        Debug "Collided:" + Str(ElapsedMilliseconds())
+      EndIf
+    EndIf
+  Next
 EndProcedure
 Procedure UpdateObstacle(ObstacleAddress.i, Elapsed.f);obstacles only goes to the left at the given velocity
   *Obstacle.TSprite = ObstacleAddress : *Obstacle\x + *Obstacle\XVelocity * Elapsed
   *Obstacle\IsAlive = IIf(Bool(*Obstacle\x < -(*Obstacle\Width * *Obstacle\ZoomLevel)), #False, #True)
 EndProcedure
 Procedure UpdateSpriteList(List SpriteList.TSprite(), Elapsed.f)
-  ForEach SpriteList() : SpriteList()\Update(@SpriteList(), Elapsed) : Next
+  ForEach SpriteList()
+    *CurrentSprite.TSprite = @SpriteList();save the current sprite being updated
+    ResetList(SpriteList());reset the list so that the update functions can loop the spritelist from the beginning
+    *CurrentSprite\Update(*CurrentSprite, Elapsed);call the update function on the current sprite
+    ChangeCurrentElement(SpriteList(), *CurrentSprite);reset the current sprite so that we can go on to the next one
+  Next
 EndProcedure
 Procedure DisplaySpriteList(List SpriteList.TSprite(), Elapsed.f)
   ForEach SpriteList()
