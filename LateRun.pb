@@ -24,7 +24,7 @@ Global Score.f
 #Animation_FPS = 12 : #Bitmap_Font_Sprite = 0
 Global Hero_Sprite_Path.s = BasePath + "graphics" + #PS$ + "hero.png"
 Global Dog_Sprite_Path.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent.png";Represented by D below
-Global Boulder_Sprite_Path.s = BasePath + "graphics" + #PS$ + "boulder-48x48.png";R below
+Global BusinessMan_Sprite_Path.s = BasePath + "graphics" + #PS$ + "businessman-24x48.png";R below
 Global Fence_Sprite_Path.s = BasePath + "graphics" + #PS$ + "fence-16x24.png";F below
 Global Bird_Sprite_Path.s = BasePath + "graphics" + #PS$ + "bird-32x32.png";B below
 Global ObstaclesPatterns.s = "FF,R,R;FF,R,D;FFF,F,D,D;F,D,R;RR,FF,D"         ;each letter represents an obstacle, two letters together means the obstacles are side by side
@@ -114,13 +114,13 @@ Procedure AddRandomObstaclePattern()
   GapBetweenObstacleWaves.f = Random(HeroDistanceFromScreenEdge, HeroDistanceFromScreenEdge / 2)
   For i.a = 1 To CountString(ObstaclePattern, ",") + 1
     ObstacleWave.s = StringField(ObstaclePattern, i, ",")
-    For j.a= 1 To Len(ObstacleWave);loop the string Text char by char
+    For j.a= 1 To Len(ObstacleWave);loop the string ObstacleWave char by char
       ObstacleLetters.a = Asc(Mid(ObstacleWave, j, 1)) : AddElement(SpriteList())
       Select ObstacleLetters
         Case 'D';dog
           InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Dog_Sprite_Path, #True, 3, #True, @UpdateObstacle(), 1)
         Case 'R';Rock (Boulder)
-          InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Boulder_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
+          InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, BusinessMan_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
         Case 'F';Fence
           InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
         Default;birds?
@@ -154,6 +154,11 @@ Procedure DrawBitmapText(x.f, y.f, Text.s);draw text is too slow on linux, let's
 EndProcedure
 Procedure DrawHUD()
   DrawBitmapText(ScreenWidth() / 2, 10, Str(Round(Score * 10, #PB_Round_Nearest)));score
+  If #False;for debug, if #true shows the collision box of the hero
+    StartDrawing(ScreenOutput()) : DrawingMode(#PB_2DDrawing_Outlined)
+    Box(*Hero\x, *Hero\y, *Hero\Width * *Hero\ZoomLevel, *Hero\Height * *Hero\ZoomLevel)
+    StopDrawing()
+  EndIf
 EndProcedure
 If InitSprite() = 0 Or InitKeyboard() = 0
   MessageRequester("Error", "Sprite system or keyboard system can't be initialized", 0)
