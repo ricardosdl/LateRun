@@ -27,7 +27,7 @@ Global Dog_Sprite_Path.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent
 Global BusinessMan_Sprite_Path.s = BasePath + "graphics" + #PS$ + "businessman-24x48.png";R below
 Global Fence_Sprite_Path.s = BasePath + "graphics" + #PS$ + "fence-16x24.png";F below
 Global Bird_Sprite_Path.s = BasePath + "graphics" + #PS$ + "bird-32x32.png";B below
-Global ObstaclesPatterns.s = "FF,R,R;FF,R,D;FFF,F,D,D;F,D,R;RR,FF,D"         ;each letter represents an obstacle, two letters together means the obstacles are side by side
+Global ObstaclesPatterns.s = "FF,R,R;FF,R,D;FFF,F,D,D;F,D,R;RR,FF,D;D,FF,R,DD,FR"         ;each letter represents an obstacle, two letters together means the obstacles are side by side
 Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpritePath.s, IsObstacle.b, NumFrames.a, IsAlive.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1)
   *Sprite\x = x : *Sprite\y = y : *Sprite\XVelocity = XVel : *Sprite\YVelocity = YVel
   *Sprite\SpriteNum = LoadSprite(#PB_Any, SpritePath) : *Sprite\IsObstacle = IsObstacle : *Sprite\IsAlive = IsAlive : *Sprite\ZoomLevel = ZoomLevel
@@ -154,7 +154,7 @@ Procedure DrawBitmapText(x.f, y.f, Text.s);draw text is too slow on linux, let's
 EndProcedure
 Procedure DrawHUD()
   DrawBitmapText(ScreenWidth() / 2, 10, Str(Round(Score * 10, #PB_Round_Nearest)));score
-  If #False;for debug, if #true shows the collision box of the hero
+  If #True;for debug, if #true shows the collision box of the hero
     StartDrawing(ScreenOutput()) : DrawingMode(#PB_2DDrawing_Outlined)
     Box(*Hero\x, *Hero\y, *Hero\Width * *Hero\ZoomLevel, *Hero\Height * *Hero\ZoomLevel)
     StopDrawing()
