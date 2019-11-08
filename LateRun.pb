@@ -110,22 +110,21 @@ Procedure StartGame();we start a new game here
   Score = 0.0 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
 EndProcedure
 Procedure AddRandomObstaclePattern()
-  ObstaclePattern.s = StringField(ObstaclesPatterns, Random(CountString(ObstaclesPatterns, ";") + 1, 1), ";");getting a random enemy pattern string
-  GapBetweenObstacleWaves.f = Random(HeroDistanceFromScreenEdge, HeroDistanceFromScreenEdge / 2)
-  For i.a = 1 To CountString(ObstaclePattern, ",") + 1
-    ObstacleWave.s = StringField(ObstaclePattern, i, ",")
-    For j.a= 1 To Len(ObstacleWave);loop the string ObstacleWave char by char
-      ObstacleLetters.a = Asc(Mid(ObstacleWave, j, 1)) : AddElement(SpriteList())
-      Select ObstacleLetters
-        Case 'D';dog
-          InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Dog_Sprite_Path, #True, 3, #True, @UpdateObstacle(), 1)
-        Case 'R';Rock (Boulder)
-          InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, BusinessMan_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
-        Case 'F';Fence
+  NumWaves.a = Random(4, 1)
+  For i.a = 1 To NumWaves
+    GapBetweenObstacleWaves.f = Random(HeroDistanceFromScreenEdge, HeroDistanceFromScreenEdge / 2)
+    NumObstacles.a = Random(3, 1) : IsDog = Bool(Random(100, 0) / 100.0 < (1 / 3))
+    For j.a = 1  To NumObstacles
+      AddElement(SpriteList())
+      If IsDog;dogs won't be added with fences or business men
+        InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Dog_Sprite_Path, #True, 3, #True, @UpdateObstacle(), 1)
+      Else
+        If Random(100, 0) / 100.0 < 0.5;add a fence
           InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
-        Default;birds?
-          Debug "nothing here for now"
-      EndSelect
+        Else;add a business man
+          InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, BusinessMan_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
+        EndIf
+      EndIf
       SpriteList()\x = ScreenWidth() + (j - 1) * (SpriteList()\Width * SpriteList()\ZoomLevel) + (i - 1) * GapBetweenObstacleWaves
       SpriteList()\y = HeroBottom - (SpriteList()\Height * SpriteList()\ZoomLevel)
     Next
@@ -154,7 +153,7 @@ Procedure DrawBitmapText(x.f, y.f, Text.s);draw text is too slow on linux, let's
 EndProcedure
 Procedure DrawHUD()
   DrawBitmapText(ScreenWidth() / 2, 10, Str(Round(Score * 10, #PB_Round_Nearest)));score
-  If #True;for debug, if #true shows the collision box of the hero
+  If #False;for debug, if #true shows the collision box of the hero
     StartDrawing(ScreenOutput()) : DrawingMode(#PB_2DDrawing_Outlined)
     Box(*Hero\x, *Hero\y, *Hero\Width * *Hero\ZoomLevel, *Hero\Height * *Hero\ZoomLevel)
     StopDrawing()
