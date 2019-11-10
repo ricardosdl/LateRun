@@ -90,6 +90,11 @@ Procedure DisplaySpriteList(List SpriteList.TSprite(), Elapsed.f)
     EndIf
     SpriteList()\AnimationTimer - Elapsed;run the timer to get to the next frame
     DisplayTransparentSprite(SpriteList()\SpriteNum, SpriteList()\x, SpriteList()\y)
+    If #True;for debug purposes, show the collision box of the current sprite
+      StartDrawing(ScreenOutput()) : DrawingMode(#PB_2DDrawing_Outlined)
+      Box(SpriteList()\x, SpriteList()\y, SpriteList()\Width * SpriteList()\ZoomLevel, SpriteList()\Height * SpriteList()\ZoomLevel)
+      StopDrawing()
+    EndIf
   Next
 EndProcedure
 Procedure RemoveSpritesFromList(List SpriteList.TSprite())
@@ -153,11 +158,6 @@ Procedure DrawBitmapText(x.f, y.f, Text.s);draw text is too slow on linux, let's
 EndProcedure
 Procedure DrawHUD()
   DrawBitmapText(ScreenWidth() / 2, 10, Str(Round(Score * 10, #PB_Round_Nearest)));score
-  If #False;for debug, if #true shows the collision box of the hero
-    StartDrawing(ScreenOutput()) : DrawingMode(#PB_2DDrawing_Outlined)
-    Box(*Hero\x, *Hero\y, *Hero\Width * *Hero\ZoomLevel, *Hero\Height * *Hero\ZoomLevel)
-    StopDrawing()
-  EndIf
 EndProcedure
 If InitSprite() = 0 Or InitKeyboard() = 0
   MessageRequester("Error", "Sprite system or keyboard system can't be initialized", 0)
