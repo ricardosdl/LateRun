@@ -27,7 +27,7 @@ Global Dog_Sprite_Path.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent
 Global BusinessMan_Sprite_Path.s = BasePath + "graphics" + #PS$ + "businessman-24x48.png";R below
 Global Fence_Sprite_Path.s = BasePath + "graphics" + #PS$ + "fence-16x24.png";F below
 Global Bird_Sprite_Path.s = BasePath + "graphics" + #PS$ + "bird-32x32.png";B below
-Global ObstaclesPatterns.s = "FF,R,R;FF,R,D;FFF,F,D,D;F,D,R;RR,FF,D;D,FF,R,DD,FR"         ;each letter represents an obstacle, two letters together means the obstacles are side by side
+Global ObstaclesPatterns.s = "D;DD;R;RR;RRR;F;FF;FFF;FFR;FR;RFF;RF;FRF"         ;each letter represents an obstacle, two letters together means the obstacles are side by side
 Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpritePath.s, IsObstacle.b, NumFrames.a, IsAlive.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1)
   *Sprite\x = x : *Sprite\y = y : *Sprite\XVelocity = XVel : *Sprite\YVelocity = YVel
   *Sprite\SpriteNum = LoadSprite(#PB_Any, SpritePath) : *Sprite\IsObstacle = IsObstacle : *Sprite\IsAlive = IsAlive : *Sprite\ZoomLevel = ZoomLevel
@@ -90,7 +90,7 @@ Procedure DisplaySpriteList(List SpriteList.TSprite(), Elapsed.f)
     EndIf
     SpriteList()\AnimationTimer - Elapsed;run the timer to get to the next frame
     DisplayTransparentSprite(SpriteList()\SpriteNum, SpriteList()\x, SpriteList()\y)
-    If #True;for debug purposes, show the collision box of the current sprite
+    If #False;for debug purposes, show the collision box of the current sprite
       StartDrawing(ScreenOutput()) : DrawingMode(#PB_2DDrawing_Outlined)
       Box(SpriteList()\x, SpriteList()\y, SpriteList()\Width * SpriteList()\ZoomLevel, SpriteList()\Height * SpriteList()\ZoomLevel)
       StopDrawing()
@@ -116,21 +116,20 @@ Procedure StartGame();we start a new game here
 EndProcedure
 Procedure AddRandomObstaclePattern()
   NumWaves.a = Random(4, 1)
+  GapBetweenObstacleWaves.f = Random(HeroDistanceFromScreenEdge, HeroDistanceFromScreenEdge / 2)
   For i.a = 1 To NumWaves
-    GapBetweenObstacleWaves.f = Random(HeroDistanceFromScreenEdge, HeroDistanceFromScreenEdge / 2)
-    NumObstacles.a = Random(3, 1) : IsDog = Bool(Random(100, 0) / 100.0 < (1 / 3))
-    For j.a = 1  To NumObstacles
-      AddElement(SpriteList())
-      If IsDog;dogs won't be added with fences or business men
-        InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Dog_Sprite_Path, #True, 3, #True, @UpdateObstacle(), 1)
-      Else
-        If Random(100, 0) / 100.0 < 0.5;add a fence
-          InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
-        Else;add a business man
-          InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, BusinessMan_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
-        EndIf
-      EndIf
-      SpriteList()\x = ScreenWidth() + (j - 1) * (SpriteList()\Width * SpriteList()\ZoomLevel) + (i - 1) * GapBetweenObstacleWaves
+    ;GapBetweenObstacleWaves.f = Random(HeroDistanceFromScreenEdge, HeroDistanceFromScreenEdge / 2)
+    Debug GapBetweenObstacleWaves
+    QtdPatterns.a = CountString(ObstaclesPatterns, ";") + 1
+    Pattern.s = StringField(ObstaclesPatterns, Random(QtdPatterns, 1), ";") : XOffSet.f = ScreenWidth()
+    For j.a = 1  To Len(Pattern)
+      Obstacle.a = Asc(Mid(Pattern, j, 1)) : AddElement(SpriteList())
+      Select Obstacle
+        Case 'D' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Dog_Sprite_Path, #True, 3, #True, @UpdateObstacle(), 1)
+        Case 'R' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, BusinessMan_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
+        Case 'F' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
+      EndSelect
+      SpriteList()\x = XOffSet + i * GapBetweenObstacleWaves : XOffSet + (SpriteList()\Width * SpriteList()\ZoomLevel)
       SpriteList()\y = HeroBottom - (SpriteList()\Height * SpriteList()\ZoomLevel)
     Next
   Next
