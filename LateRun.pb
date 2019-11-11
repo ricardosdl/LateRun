@@ -140,7 +140,7 @@ Procedure.u CountObstacles()
   ProcedureReturn QtdObstacles
 EndProcedure
 Procedure UpdateGameLogic(Elapsed.f)
-  Score + Elapsed : ObstaclesTimer + Elapsed
+  Score + Elapsed * 10 : ObstaclesTimer + Elapsed
   If CountObstacles() = 0
     AddRandomObstaclePattern()
   EndIf
@@ -154,7 +154,7 @@ Procedure DrawBitmapText(x.f, y.f, Text.s);draw text is too slow on linux, let's
   Next i
 EndProcedure
 Procedure DrawHUD()
-  DrawBitmapText(ScreenWidth() / 2, 10, Str(Round(Score * 10, #PB_Round_Nearest)));score
+  DrawBitmapText(ScreenWidth() / 2, 10, Str(Round(Score, #PB_Round_Nearest)));score
 EndProcedure
 If InitSprite() = 0 Or InitKeyboard() = 0
   MessageRequester("Error", "Sprite system or keyboard system can't be initialized", 0)
