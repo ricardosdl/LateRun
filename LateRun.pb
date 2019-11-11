@@ -118,8 +118,6 @@ Procedure AddRandomObstaclePattern()
   NumWaves.a = Random(4, 1)
   GapBetweenObstacleWaves.f = Random(HeroDistanceFromScreenEdge, HeroDistanceFromScreenEdge / 2)
   For i.a = 1 To NumWaves
-    ;GapBetweenObstacleWaves.f = Random(HeroDistanceFromScreenEdge, HeroDistanceFromScreenEdge / 2)
-    Debug GapBetweenObstacleWaves
     QtdPatterns.a = CountString(ObstaclesPatterns, ";") + 1
     Pattern.s = StringField(ObstaclesPatterns, Random(QtdPatterns, 1), ";") : XOffSet.f = ScreenWidth()
     For j.a = 1  To Len(Pattern)
