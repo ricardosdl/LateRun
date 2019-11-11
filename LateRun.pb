@@ -20,7 +20,7 @@ Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.q, SoundInit
 Global NewList SpriteList.TSprite(), *Hero.TSprite;
 Global HeroDistanceFromScreenEdge.f, IsHeroOnGround.b = #True, HeroGroundY.f, HeroBottom.f, HeroJumpTimer.f, IsHeroJumping.b = #False
 Global BaseVelocity.f, ObstaclesVelocity.f, ObstaclesTimer.f, CurrentObstaclesTimer.f, ObstaclesChance.f
-Global Score.f
+Global Score.f, ScoreModuloDivisor.l
 #Animation_FPS = 12 : #Bitmap_Font_Sprite = 0
 Global Hero_Sprite_Path.s = BasePath + "graphics" + #PS$ + "hero.png"
 Global Dog_Sprite_Path.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent.png";Represented by D below
@@ -112,7 +112,7 @@ Procedure StartGame();we start a new game here
   HeroDistanceFromScreenEdge = ScreenWidth() - (*Hero\x + *Hero\Width * *Hero\ZoomLevel) : HeroBottom = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel)
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False
   BaseVelocity = 1.0 : ObstaclesVelocity = 250.0 : ObstaclesTimer = 0.0 : CurrentObstaclesTimer = 1.5 : ObstaclesChance.f = 0.5
-  Score = 0.0 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
+  Score = 0.0 : ScoreModuloDivisor = 100 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
 EndProcedure
 Procedure AddRandomObstaclePattern()
   NumWaves.a = Random(4, 1)
@@ -127,7 +127,7 @@ Procedure AddRandomObstaclePattern()
         Case 'R' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, BusinessMan_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
         Case 'F' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
       EndSelect
-      SpriteList()\x = XOffSet + i * GapBetweenObstacleWaves : XOffSet + (SpriteList()\Width * SpriteList()\ZoomLevel)
+      SpriteList()\x = XOffSet + (i - 1) * GapBetweenObstacleWaves : XOffSet + (SpriteList()\Width * SpriteList()\ZoomLevel)
       SpriteList()\y = HeroBottom - (SpriteList()\Height * SpriteList()\ZoomLevel)
     Next
   Next
@@ -140,9 +140,14 @@ Procedure.u CountObstacles()
   ProcedureReturn QtdObstacles
 EndProcedure
 Procedure UpdateGameLogic(Elapsed.f)
-  Score + Elapsed * 10 : ObstaclesTimer + Elapsed
+  Score + Elapsed * 10 : ObstaclesTimer + Elapsed : RoundedScore.i = Int(Round(Score, #PB_Round_Nearest))
   If CountObstacles() = 0
     AddRandomObstaclePattern()
+  EndIf
+  If RoundedScore <> 0 And RoundedScore % ScoreModuloDivisor = 0
+    BaseVelocity * 1.1
+    Debug "current vel:" + StrF(ObstaclesVelocity * BaseVelocity)
+    ScoreModuloDivisor + 100
   EndIf
 EndProcedure
 Procedure DrawBitmapText(x.f, y.f, Text.s);draw text is too slow on linux, let's try to use bitmap fonts
