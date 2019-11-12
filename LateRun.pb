@@ -19,7 +19,7 @@ Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.q, SoundInit
 Global NewList SpriteList.TSprite(), *Hero.TSprite;
 Global HeroDistanceFromScreenEdge.f, IsHeroOnGround.b = #True, HeroGroundY.f, HeroBottom.f, HeroJumpTimer.f, IsHeroJumping.b = #False
 Global BaseVelocity.f, ObstaclesVelocity.f, ObstaclesTimer.f, CurrentObstaclesTimer.f, ObstaclesChance.f
-Global Score.f, ScoreModuloDivisor.l
+Global Score.f, ScoreModuloDivisor.l, DrawCollisionBoxes.b = #True
 #Animation_FPS = 12 : #Bitmap_Font_Sprite = 0
 Global Hero_Sprite_Path.s = BasePath + "graphics" + #PS$ + "hero.png"
 Global Dog_Sprite_Path.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent.png";Represented by D below
@@ -89,12 +89,14 @@ Procedure DisplaySpriteList(List SpriteList.TSprite(), Elapsed.f)
     EndIf
     SpriteList()\AnimationTimer - Elapsed;run the timer to get to the next frame
     DisplayTransparentSprite(SpriteList()\SpriteNum, SpriteList()\x, SpriteList()\y)
-    If #False;for debug purposes, show the collision box of the current sprite
-      StartDrawing(ScreenOutput()) : DrawingMode(#PB_2DDrawing_Outlined)
-      Box(SpriteList()\x, SpriteList()\y, SpriteList()\Width * SpriteList()\ZoomLevel, SpriteList()\Height * SpriteList()\ZoomLevel)
-      StopDrawing()
-    EndIf
   Next
+  If DrawCollisionBoxes
+    StartDrawing(ScreenOutput()) : DrawingMode(#PB_2DDrawing_Outlined)
+    ForEach SpriteList()
+      Box(SpriteList()\x, SpriteList()\y, SpriteList()\Width * SpriteList()\ZoomLevel, SpriteList()\Height * SpriteList()\ZoomLevel)
+    Next
+    StopDrawing()
+  EndIf
 EndProcedure
 Procedure RemoveSpritesFromList(List SpriteList.TSprite())
   ForEach SpriteList()
