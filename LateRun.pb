@@ -15,7 +15,7 @@ Structure TSprite
   ZoomLevel.f;the actual width or height it must be multiplied by the zoomlevel value
   Update.UpdateSpriteProc;the address of the update procedure that will update sprites positions and velocities, also handles inputs
 EndStructure
-Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.q, SoundInitiated.b
+Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.q, SoundInitiated.b, IsGameOver.b
 Global NewList SpriteList.TSprite(), *Hero.TSprite;
 Global HeroDistanceFromScreenEdge.f, IsHeroOnGround.b = #True, HeroGroundY.f, HeroBottom.f, HeroJumpTimer.f, IsHeroJumping.b = #False
 Global BaseVelocity.f, ObstaclesVelocity.f, ObstaclesTimer.f, CurrentObstaclesTimer.f, ObstaclesChance.f
@@ -62,7 +62,7 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
   ForEach SpriteList()
     If SpriteList()\IsObstacle
       If SpriteCollision(*Hero\SpriteNum, *Hero\x, *Hero\y, SpriteList()\SpriteNum, SpriteList()\x, SpriteList()\y)
-        Debug "Collided:" + Str(ElapsedMilliseconds())
+        IsGameOver = #True
       EndIf
     EndIf
   Next
@@ -102,16 +102,18 @@ Procedure RemoveSpritesFromList(List SpriteList.TSprite())
   ForEach SpriteList()
     If Not SpriteList()\IsAlive
       FreeSprite(SpriteList()\SpriteNum)
-      DeleteElement(SpriteList(), #True)
+      DeleteElement(SpriteList())
     EndIf
   Next
 EndProcedure
 Procedure StartGame();we start a new game here
+  ForEach SpriteList() : SpriteList()\IsAlive = #False :Next;mark all sprites as not alive, so we can remove them
+  RemoveSpritesFromList(SpriteList())
   AddElement(SpriteList()) : *Hero = @SpriteList()
   InitializeSprite(*Hero, 0, 0, 0, 0, Hero_Sprite_Path, #False, 4, #True, @UpdateHero(), 4)
   *Hero\x = *Hero\Width * *Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : *Hero\y = HeroGroundY;starting position for the hero
   HeroDistanceFromScreenEdge = ScreenWidth() - (*Hero\x + *Hero\Width * *Hero\ZoomLevel) : HeroBottom = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel)
-  IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False
+  IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False : IsGameOver = #False
   BaseVelocity = 1.0 : ObstaclesVelocity = 250.0 : ObstaclesTimer = 0.0 : CurrentObstaclesTimer = 1.5 : ObstaclesChance.f = 0.5
   Score = 0.0 : ScoreModuloDivisor = 100 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
 EndProcedure
@@ -162,6 +164,11 @@ EndProcedure
 Procedure DrawHUD()
   DrawBitmapText(ScreenWidth() / 2, 10, Str(Round(Score, #PB_Round_Nearest)));score
 EndProcedure
+Procedure UpdateInput()
+  If KeyboardReleased(#PB_Key_Return) And IsGameOver
+    StartGame();when is game over the player can hit enter to restart the game
+  EndIf
+EndProcedure
 If InitSprite() = 0 Or InitKeyboard() = 0
   MessageRequester("Error", "Sprite system or keyboard system can't be initialized", 0)
   End
@@ -182,9 +189,10 @@ If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_
       Until Event = 0 ; Quit the event loop only when no more events are available
       FlipBuffers()
       ClearScreen(RGB(0,0,0))
-      ExamineKeyboard()
+      ExamineKeyboard() : UpdateInput()
       ElapsedTimneInS = (ElapsedMilliseconds() - StartTimeInMs) / 1000.0
       ElapsedTimneInS = IIf(Bool(ElapsedTimneInS >= 0.05), 0.05, ElapsedTimneInS)
+      ElapsedTimneInS = IIf(IsGameOver, 0.0, ElapsedTimneInS)
       UpdateGameLogic(ElapsedTimneInS) : UpdateSpriteList(SpriteList(), ElapsedTimneInS) : DisplaySpriteList(SpriteList(), ElapsedTimneInS)
       DrawHUD()
       RemoveSpritesFromList(SpriteList())
