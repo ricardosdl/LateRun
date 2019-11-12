@@ -1,6 +1,5 @@
 ﻿Procedure.f IIf(Test.b, ValTrue.f, ValFalse.f);classic vb function, helps us to save some lines in if else endif fragments
-  If Test : ProcedureReturn ValTrue : EndIf
-  ProcedureReturn ValFalse
+  If Test : ProcedureReturn ValTrue : EndIf : ProcedureReturn ValFalse
 EndProcedure
 Prototype UpdateSpriteProc(SpriteAddress.i, Elapsed.f);our prototype procedure that each sprite can call to update itself
 Structure TSprite
