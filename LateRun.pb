@@ -18,7 +18,7 @@ EndStructure
 Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.q, SoundInitiated.b, IsGameOver.b
 Global NewList SpriteList.TSprite(), *Hero.TSprite;
 Global HeroDistanceFromScreenEdge.f, IsHeroOnGround.b = #True, HeroGroundY.f, HeroBottom.f, HeroJumpTimer.f, IsHeroJumping.b = #False
-Global BaseVelocity.f, ObstaclesVelocity.f, ObstaclesTimer.f, CurrentObstaclesTimer.f, ObstaclesChance.f
+Global BaseVelocity.f, ObstaclesVelocity.f
 Global Score.f, ScoreModuloDivisor.l, DrawCollisionBoxes.b = #True
 #Animation_FPS = 12 : #Bitmap_Font_Sprite = 0
 Global Hero_Sprite_Path.s = BasePath + "graphics" + #PS$ + "hero.png"
@@ -114,7 +114,7 @@ Procedure StartGame();we start a new game here
   *Hero\x = *Hero\Width * *Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : *Hero\y = HeroGroundY;starting position for the hero
   HeroDistanceFromScreenEdge = ScreenWidth() - (*Hero\x + *Hero\Width * *Hero\ZoomLevel) : HeroBottom = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel)
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False : IsGameOver = #False
-  BaseVelocity = 1.0 : ObstaclesVelocity = 250.0 : ObstaclesTimer = 0.0 : CurrentObstaclesTimer = 1.5 : ObstaclesChance.f = 0.5
+  BaseVelocity = 1.0 : ObstaclesVelocity = 250.0
   Score = 0.0 : ScoreModuloDivisor = 100 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
 EndProcedure
 Procedure AddRandomObstaclePattern()
@@ -143,7 +143,7 @@ Procedure.u CountObstacles()
   ProcedureReturn QtdObstacles
 EndProcedure
 Procedure UpdateGameLogic(Elapsed.f)
-  Score + Elapsed * 10 : ObstaclesTimer + Elapsed : RoundedScore.i = Int(Round(Score, #PB_Round_Nearest))
+  Score + Elapsed * 10 : RoundedScore.i = Int(Round(Score, #PB_Round_Nearest))
   If CountObstacles() = 0
     AddRandomObstaclePattern()
   EndIf
