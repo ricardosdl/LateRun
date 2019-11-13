@@ -153,16 +153,19 @@ Procedure UpdateGameLogic(Elapsed.f)
     ScoreModuloDivisor + 100
   EndIf
 EndProcedure
-Procedure DrawBitmapText(x.f, y.f, Text.s);draw text is too slow on linux, let's try to use bitmap fonts
+Procedure DrawBitmapText(x.f, y.f, Text.s, CharWidthPx.a = 16, CharHeightPx.a = 24);draw text is too slow on linux, let's try to use bitmap fonts
+  ClipSprite(#Bitmap_Font_Sprite, #PB_Default, #PB_Default, #PB_Default, #PB_Default)
+  ZoomSprite(#Bitmap_Font_Sprite, #PB_Default, #PB_Default)
   For i.i = 1 To Len(Text);loop the string Text char by char
     AsciiValue.a = Asc(Mid(Text, i, 1))
     ClipSprite(#Bitmap_Font_Sprite, (AsciiValue - 32) % 16 * 8, (AsciiValue - 32) / 16 * 12, 8, 12)
-    ZoomSprite(#Bitmap_Font_Sprite, 16, 24)
-    DisplayTransparentSprite(#Bitmap_Font_Sprite, x + (i - 1) * 16, y)
-  Next i
+    ZoomSprite(#Bitmap_Font_Sprite, CharWidthPx, CharHeightPx)
+    DisplayTransparentSprite(#Bitmap_Font_Sprite, x + (i - 1) * CharWidthPx, y)
+  Next
 EndProcedure
 Procedure DrawHUD()
   DrawBitmapText(ScreenWidth() / 2, 10, Str(Round(Score, #PB_Round_Nearest)));score
+  If IsInvincibleMode : DrawBitmapText(5, ScreenHeight() - 30, "Invincible mode", 8, 12) : EndIf
 EndProcedure
 Procedure UpdateInput()
   If KeyboardReleased(#PB_Key_Return) And IsGameOver
