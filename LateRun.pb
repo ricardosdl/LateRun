@@ -15,11 +15,11 @@ Structure TSprite
   ZoomLevel.f;the actual width or height it must be multiplied by the zoomlevel value
   Update.UpdateSpriteProc;the address of the update procedure that will update sprites positions and velocities, also handles inputs
 EndStructure
-Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.q, SoundInitiated.b, IsGameOver.b, IsInvincibleMode.b
+Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.q, SoundInitiated.b, IsGameOver.a, IsInvincibleMode.a
 Global NewList SpriteList.TSprite(), *Hero.TSprite;
 Global HeroDistanceFromScreenEdge.f, IsHeroOnGround.b = #True, HeroGroundY.f, HeroBottom.f, HeroJumpTimer.f, IsHeroJumping.b = #False
 Global BaseVelocity.f, ObstaclesVelocity.f
-Global Score.f, ScoreModuloDivisor.l, DrawCollisionBoxes.b = #True
+Global Score.f, ScoreModuloDivisor.l, DrawCollisionBoxes.a = #False
 #Animation_FPS = 12 : #Bitmap_Font_Sprite = 0
 Global Hero_Sprite_Path.s = BasePath + "graphics" + #PS$ + "hero.png"
 Global Dog_Sprite_Path.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent.png";Represented by D below
@@ -62,7 +62,7 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
   ForEach SpriteList()
     If SpriteList()\IsObstacle
       If SpriteCollision(*Hero\SpriteNum, *Hero\x, *Hero\y, SpriteList()\SpriteNum, SpriteList()\x, SpriteList()\y)
-        IsGameOver = ~IsInvincibleMode
+        IsGameOver = Bool(Not IsInvincibleMode)
       EndIf
     EndIf
   Next
@@ -171,7 +171,8 @@ Procedure UpdateInput()
   If KeyboardReleased(#PB_Key_Return) And IsGameOver
     StartGame();when is game over the player can hit enter to restart the game
   EndIf
-  If KeyboardReleased(#PB_Key_I) : IsInvincibleMode = ~IsInvincibleMode : EndIf;if we press I the collision of obstacles is not game ove anymore
+  IsInvincibleMode = Bool(KeyboardReleased(#PB_Key_I) XOr IsInvincibleMode);if we press I the collision of obstacles is not game ove anymore
+  DrawCollisionBoxes = Bool(KeyboardReleased(#PB_Key_C) XOr DrawCollisionBoxes);press C to show/hide the collision boxes
 EndProcedure
 If InitSprite() = 0 Or InitKeyboard() = 0
   MessageRequester("Error", "Sprite system or keyboard system can't be initialized", 0)
