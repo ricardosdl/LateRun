@@ -1,6 +1,9 @@
 ﻿Procedure.f IIf(Test.b, ValTrue.f, ValFalse.f);classic vb function, helps us to save some lines in if else endif fragments
   If Test : ProcedureReturn ValTrue : EndIf : ProcedureReturn ValFalse
 EndProcedure
+Structure TRect
+  x.f : y.f : w.f : h.f
+EndStructure
 Prototype UpdateSpriteProc(SpriteAddress.i, Elapsed.f);our prototype procedure that each sprite can call to update itself
 Structure TSprite
   x.f : y.f;position
@@ -14,9 +17,16 @@ Structure TSprite
   DrawOrder.u;the sprites with lower draw order must be drawn first
   ZoomLevel.f;the actual width or height it must be multiplied by the zoomlevel value
   Update.UpdateSpriteProc;the address of the update procedure that will update sprites positions and velocities, also handles inputs
+  CollisionRect.TRect
 EndStructure
+Procedure.a AABBCollision(*Rect1.TRect, *Rect2.TRect)
+  ProcedureReturn Bool(*Rect1\x < *Rect2\x + *Rect2\w And 
+                       *Rect1\x + *Rect1\w > *Rect2\x And
+                       *Rect1\y < *Rect2\y + *Rect2\h And
+                       *Rect1\y + *Rect1\h > *Rect2\y)
+EndProcedure
 Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.q, SoundInitiated.b, IsGameOver.a, IsInvincibleMode.a
-Global NewList SpriteList.TSprite(), *Hero.TSprite;
+Global NewList SpriteList.TSprite(), *Hero.TSprite, HeroRect.TRect;
 Global HeroDistanceFromScreenEdge.f, IsHeroOnGround.b = #True, HeroGroundY.f, HeroBottom.f, HeroJumpTimer.f, IsHeroJumping.b = #False
 Global BaseVelocity.f, ObstaclesVelocity.f
 Global Score.f, ScoreModuloDivisor.l, DrawCollisionBoxes.a = #False
@@ -59,9 +69,12 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
   If Not IsHeroOnGround;kind like gravity here
     *HeroSprite\YVelocity + 2200 * Elapsed
   EndIf
+  *HeroSprite\CollisionRect\w = (*HeroSprite\Width * *HeroSprite\ZoomLevel) - 8 : *HeroSprite\CollisionRect\h = (*HeroSprite\Height * *HeroSprite\ZoomLevel) - 8
+  *HeroSprite\CollisionRect\x = (*HeroSprite\x + (*HeroSprite\Width * *HeroSprite\ZoomLevel) / 2) - *HeroSprite\CollisionRect\w / 2
+  *HeroSprite\CollisionRect\y = (*HeroSprite\y + (*HeroSprite\Height * *HeroSprite\ZoomLevel) / 2) - *HeroSprite\CollisionRect\h / 2
   ForEach SpriteList()
     If SpriteList()\IsObstacle
-      If SpriteCollision(*Hero\SpriteNum, *Hero\x, *Hero\y, SpriteList()\SpriteNum, SpriteList()\x, SpriteList()\y)
+      If AABBCollision(@*HeroSprite\CollisionRect, @SpriteList()\CollisionRect)
         IsGameOver = Bool(Not IsInvincibleMode)
       EndIf
     EndIf
@@ -70,6 +83,8 @@ EndProcedure
 Procedure UpdateObstacle(ObstacleAddress.i, Elapsed.f);obstacles only goes to the left at the given velocity
   *Obstacle.TSprite = ObstacleAddress : *Obstacle\x + *Obstacle\XVelocity * Elapsed
   *Obstacle\IsAlive = IIf(Bool(*Obstacle\x < -(*Obstacle\Width * *Obstacle\ZoomLevel)), #False, #True)
+  *Obstacle\CollisionRect\w = *Obstacle\Width * *Obstacle\ZoomLevel : *Obstacle\CollisionRect\h = *Obstacle\Height * *Obstacle\ZoomLevel
+  *Obstacle\CollisionRect\x = *Obstacle\x : *Obstacle\CollisionRect\y = *Obstacle\y
 EndProcedure
 Procedure UpdateSpriteList(List SpriteList.TSprite(), Elapsed.f)
   ForEach SpriteList()
@@ -93,7 +108,7 @@ Procedure DisplaySpriteList(List SpriteList.TSprite(), Elapsed.f)
   If DrawCollisionBoxes
     StartDrawing(ScreenOutput()) : DrawingMode(#PB_2DDrawing_Outlined)
     ForEach SpriteList()
-      Box(SpriteList()\x, SpriteList()\y, SpriteList()\Width * SpriteList()\ZoomLevel, SpriteList()\Height * SpriteList()\ZoomLevel)
+      Box(SpriteList()\CollisionRect\x, SpriteList()\CollisionRect\y, SpriteList()\CollisionRect\w, SpriteList()\CollisionRect\h)
     Next
     StopDrawing()
   EndIf
