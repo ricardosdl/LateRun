@@ -15,7 +15,7 @@ Structure TSprite
   ZoomLevel.f;the actual width or height it must be multiplied by the zoomlevel value
   Update.UpdateSpriteProc;the address of the update procedure that will update sprites positions and velocities, also handles inputs
 EndStructure
-Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.q, SoundInitiated.b, IsGameOver.b
+Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.q, SoundInitiated.b, IsGameOver.b, IsInvincibleMode.b
 Global NewList SpriteList.TSprite(), *Hero.TSprite;
 Global HeroDistanceFromScreenEdge.f, IsHeroOnGround.b = #True, HeroGroundY.f, HeroBottom.f, HeroJumpTimer.f, IsHeroJumping.b = #False
 Global BaseVelocity.f, ObstaclesVelocity.f
@@ -62,7 +62,7 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
   ForEach SpriteList()
     If SpriteList()\IsObstacle
       If SpriteCollision(*Hero\SpriteNum, *Hero\x, *Hero\y, SpriteList()\SpriteNum, SpriteList()\x, SpriteList()\y)
-        IsGameOver = #True
+        IsGameOver = ~IsInvincibleMode
       EndIf
     EndIf
   Next
@@ -113,7 +113,7 @@ Procedure StartGame();we start a new game here
   InitializeSprite(*Hero, 0, 0, 0, 0, Hero_Sprite_Path, #False, 4, #True, @UpdateHero(), 4)
   *Hero\x = *Hero\Width * *Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : *Hero\y = HeroGroundY;starting position for the hero
   HeroDistanceFromScreenEdge = ScreenWidth() - (*Hero\x + *Hero\Width * *Hero\ZoomLevel) : HeroBottom = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel)
-  IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False : IsGameOver = #False
+  IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False : IsGameOver = #False : IsInvincibleMode = #False
   BaseVelocity = 1.0 : ObstaclesVelocity = 250.0
   Score = 0.0 : ScoreModuloDivisor = 100 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
 EndProcedure
@@ -168,6 +168,7 @@ Procedure UpdateInput()
   If KeyboardReleased(#PB_Key_Return) And IsGameOver
     StartGame();when is game over the player can hit enter to restart the game
   EndIf
+  If KeyboardReleased(#PB_Key_I) : IsInvincibleMode = ~IsInvincibleMode : EndIf;if we press I the collision of obstacles is not game ove anymore
 EndProcedure
 If InitSprite() = 0 Or InitKeyboard() = 0
   MessageRequester("Error", "Sprite system or keyboard system can't be initialized", 0)
