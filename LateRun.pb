@@ -36,13 +36,19 @@ Global Dog_Sprite_Path.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent
 Global BusinessMan_Sprite_Path.s = BasePath + "graphics" + #PS$ + "businessman-24x48.png";R below
 Global Fence_Sprite_Path.s = BasePath + "graphics" + #PS$ + "fence-16x24.png";F below
 Global Bird_Sprite_Path.s = BasePath + "graphics" + #PS$ + "bird-32x32.png";B below
-Global ObstaclesPatterns.s = "D;DD;R;RR;RRR;RRF;F;FF;FFF;FFR;FR;RFF;RF;FRF"         ;each letter represents an obstacle, two letters together means the obstacles are side by side
+Global ObstaclesPatterns.s = "D;DD;R;RR;RRR;RRF;F;FF;FFF;FFR;FR;RFF;RF;FRF";each letter represents an obstacle, two letters together means the obstacles are side by side
+Procedure SetCollisionRect(*Sprite.TSprite, Offset.a = 8)
+  *Sprite\CollisionRect\w = (*Sprite\Width * *Sprite\ZoomLevel) - Offset : *Sprite\CollisionRect\h = (*Sprite\Height * *Sprite\ZoomLevel) - Offset
+  *Sprite\CollisionRect\x = (*Sprite\x + (*Sprite\Width * *Sprite\ZoomLevel) / 2) - *Sprite\CollisionRect\w / 2
+  *Sprite\CollisionRect\y = (*Sprite\y + (*Sprite\Height * *Sprite\ZoomLevel) / 2) - *Sprite\CollisionRect\h / 2
+EndProcedure
 Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpritePath.s, IsObstacle.b, NumFrames.a, IsAlive.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1)
   *Sprite\x = x : *Sprite\y = y : *Sprite\XVelocity = XVel : *Sprite\YVelocity = YVel
   *Sprite\SpriteNum = LoadSprite(#PB_Any, SpritePath) : *Sprite\IsObstacle = IsObstacle : *Sprite\IsAlive = IsAlive : *Sprite\ZoomLevel = ZoomLevel
   *Sprite\Update = UpdateProc : *Sprite\CurrentFrame = 0 : *Sprite\AnimationTimer = 1 / #Animation_FPS
   *Sprite\NumFrames = NumFrames : *Sprite\Width = SpriteWidth(*Sprite\SpriteNum) / NumFrames
   *Sprite\Height = SpriteHeight(*Sprite\SpriteNum);we assume all sprite sheets are only one row
+  SetCollisionRect(*Sprite)
 EndProcedure
 Global StartJump.q = 0, LowestHeroY.f = 1000
 Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero sprite state here
@@ -69,9 +75,7 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
   If Not IsHeroOnGround;kind like gravity here
     *HeroSprite\YVelocity + 2200 * Elapsed
   EndIf
-  *HeroSprite\CollisionRect\w = (*HeroSprite\Width * *HeroSprite\ZoomLevel) - 8 : *HeroSprite\CollisionRect\h = (*HeroSprite\Height * *HeroSprite\ZoomLevel) - 8
-  *HeroSprite\CollisionRect\x = (*HeroSprite\x + (*HeroSprite\Width * *HeroSprite\ZoomLevel) / 2) - *HeroSprite\CollisionRect\w / 2
-  *HeroSprite\CollisionRect\y = (*HeroSprite\y + (*HeroSprite\Height * *HeroSprite\ZoomLevel) / 2) - *HeroSprite\CollisionRect\h / 2
+  SetCollisionRect(*HeroSprite)
   ForEach SpriteList()
     If SpriteList()\IsObstacle
       If AABBCollision(@*HeroSprite\CollisionRect, @SpriteList()\CollisionRect)
@@ -83,9 +87,7 @@ EndProcedure
 Procedure UpdateObstacle(ObstacleAddress.i, Elapsed.f);obstacles only goes to the left at the given velocity
   *Obstacle.TSprite = ObstacleAddress : *Obstacle\x + *Obstacle\XVelocity * Elapsed
   *Obstacle\IsAlive = IIf(Bool(*Obstacle\x < -(*Obstacle\Width * *Obstacle\ZoomLevel)), #False, #True)
-  *Obstacle\CollisionRect\w = *Obstacle\Width * *Obstacle\ZoomLevel - 8 : *Obstacle\CollisionRect\h = *Obstacle\Height * *Obstacle\ZoomLevel - 8
-  *Obstacle\CollisionRect\x = (*Obstacle\x + (*Obstacle\Width * *Obstacle\ZoomLevel) / 2) - *Obstacle\CollisionRect\w / 2
-  *Obstacle\CollisionRect\y = (*Obstacle\y + (*Obstacle\Height * *Obstacle\ZoomLevel) / 2) - *Obstacle\CollisionRect\h / 2
+  SetCollisionRect(*Obstacle)
 EndProcedure
 Procedure UpdateSpriteList(List SpriteList.TSprite(), Elapsed.f)
   ForEach SpriteList()
@@ -128,7 +130,7 @@ Procedure StartGame();we start a new game here
   AddElement(SpriteList()) : *Hero = @SpriteList()
   InitializeSprite(*Hero, 0, 0, 0, 0, Hero_Sprite_Path, #False, 4, #True, @UpdateHero(), 4)
   *Hero\x = *Hero\Width * *Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : *Hero\y = HeroGroundY;starting position for the hero
-  HeroDistanceFromScreenEdge = ScreenWidth() - (*Hero\x + *Hero\Width * *Hero\ZoomLevel) : HeroBottom = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel)
+  HeroDistanceFromScreenEdge = ScreenWidth() - (*Hero\CollisionRect\x + *Hero\CollisionRect\w) : HeroBottom = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel)
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False : IsGameOver = #False : IsInvincibleMode = #False
   BaseVelocity = 1.0 : ObstaclesVelocity = 250.0
   Score = 0.0 : ScoreModuloDivisor = 100 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
