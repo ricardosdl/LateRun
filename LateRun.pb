@@ -83,8 +83,9 @@ EndProcedure
 Procedure UpdateObstacle(ObstacleAddress.i, Elapsed.f);obstacles only goes to the left at the given velocity
   *Obstacle.TSprite = ObstacleAddress : *Obstacle\x + *Obstacle\XVelocity * Elapsed
   *Obstacle\IsAlive = IIf(Bool(*Obstacle\x < -(*Obstacle\Width * *Obstacle\ZoomLevel)), #False, #True)
-  *Obstacle\CollisionRect\w = *Obstacle\Width * *Obstacle\ZoomLevel : *Obstacle\CollisionRect\h = *Obstacle\Height * *Obstacle\ZoomLevel
-  *Obstacle\CollisionRect\x = *Obstacle\x : *Obstacle\CollisionRect\y = *Obstacle\y
+  *Obstacle\CollisionRect\w = *Obstacle\Width * *Obstacle\ZoomLevel - 8 : *Obstacle\CollisionRect\h = *Obstacle\Height * *Obstacle\ZoomLevel - 8
+  *Obstacle\CollisionRect\x = (*Obstacle\x + (*Obstacle\Width * *Obstacle\ZoomLevel) / 2) - *Obstacle\CollisionRect\w / 2
+  *Obstacle\CollisionRect\y = (*Obstacle\y + (*Obstacle\Height * *Obstacle\ZoomLevel) / 2) - *Obstacle\CollisionRect\h / 2
 EndProcedure
 Procedure UpdateSpriteList(List SpriteList.TSprite(), Elapsed.f)
   ForEach SpriteList()
