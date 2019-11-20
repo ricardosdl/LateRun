@@ -124,15 +124,27 @@ Procedure AddRandomObstaclePattern()
   For i.a = 1 To NumWaves
     QtdPatterns.a = CountString(ObstaclesPatterns, ";") + 1
     Pattern.s = StringField(ObstaclesPatterns, Random(QtdPatterns, 1), ";") : XOffSet.f = ScreenWidth()
+    ShouldAddBird = Bool((Score >= 600) And (Random(100, 1) / 100 < 0.5))
+    If ShouldAddBird : Pattern = Pattern + "B" : EndIf
     For j.a = 1  To Len(Pattern)
       Obstacle.a = Asc(Mid(Pattern, j, 1)) : AddElement(SpriteList())
       Select Obstacle
         Case 'D' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Dog_Sprite_Path, #True, 3, #True, @UpdateObstacle(), 1)
         Case 'R' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, BusinessMan_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
         Case 'F' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
+        Case 'B' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity * 0.3, 0, Bird_Sprite_Path, #True, 5, #True, @UpdateObstacle(), 1)
       EndSelect
       SpriteList()\x = XOffSet + i * GapBetweenObstacleWaves : XOffSet + (SpriteList()\Width * SpriteList()\ZoomLevel)
-      SpriteList()\y = HeroBottom - (SpriteList()\Height * SpriteList()\ZoomLevel)
+      If Obstacle <> 'B';its not a bird, should be added at the hero level at the ground
+        SpriteList()\y = HeroBottom - (SpriteList()\Height * SpriteList()\ZoomLevel)
+      EndIf
+      If Obstacle = 'B'
+        If Random(100, 1) / 100.0 < 0.5;adds the bird at the hero level at the round
+          SpriteList()\y = HeroBottom - (SpriteList()\Height * SpriteList()\ZoomLevel)
+        Else;the bird is above the hero
+          SpriteList()\y = HeroBottom - (*Hero\Height * *Hero\ZoomLevel - SpriteList()\Height * SpriteList()\ZoomLevel)
+        EndIf
+      EndIf
     Next
   Next
 EndProcedure
