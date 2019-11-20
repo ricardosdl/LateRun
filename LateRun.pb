@@ -7,8 +7,7 @@ Structure TSprite
   XVelocity.f : YVelocity.f;velociy in each axis
   SpriteNum.i : IsObstacle.b
   NumFrames.a : CurrentFrame.a
-  Width.u;the original width of the sprite, before zooming
-  Height.u;the original height of the sprite, before zooming
+  Width.u : Height.u;the original width and height of the sprite, before zooming
   AnimationTimer.f
   IsAlive.b
   DrawOrder.u;the sprites with lower draw order must be drawn first
