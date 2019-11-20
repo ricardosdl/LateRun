@@ -194,6 +194,9 @@ Procedure UpdateInput()
   IsInvincibleMode = Bool(KeyboardReleased(#PB_Key_I) XOr IsInvincibleMode);if we press I the collision of obstacles is not game ove anymore
   DrawCollisionBoxes = Bool(KeyboardReleased(#PB_Key_C) XOr DrawCollisionBoxes);press C to show/hide the collision boxes
   PausedGame = Bool(KeyboardReleased(#PB_Key_P) XOr PausedGame)
+  If KeyboardReleased(#PB_Key_N);debug only, press N to advance the score and the obstacles' velocity
+    NextScore.f = Round(Score / 100, #PB_Round_Up) * 100 : Score = NextScore
+  EndIf
 EndProcedure
 If InitSprite() = 0 Or InitKeyboard() = 0
   MessageRequester("Error", "Sprite system or keyboard system can't be initialized", 0)
