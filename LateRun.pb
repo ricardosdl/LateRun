@@ -136,8 +136,7 @@ Procedure AddRandomObstaclePattern()
       SpriteList()\x = XOffSet + i * GapBetweenObstacleWaves : XOffSet + (SpriteList()\Width * SpriteList()\ZoomLevel)
       If Obstacle <> 'B';its not a bird, should be added at the hero level at the ground
         SpriteList()\y = HeroBottom - (SpriteList()\Height * SpriteList()\ZoomLevel)
-      EndIf
-      If Obstacle = 'B'
+      Else;adding a bird
         If Random(100, 1) / 100.0 < 0.5;adds the bird at the hero level at the round
           SpriteList()\y = HeroBottom - (SpriteList()\Height * SpriteList()\ZoomLevel)
         Else;the bird is above the hero
