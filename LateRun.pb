@@ -131,7 +131,7 @@ Procedure AddRandomObstaclePattern()
         Case 'R' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, BusinessMan_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
         Case 'F' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
       EndSelect
-      SpriteList()\x = XOffSet + (i - 1) * GapBetweenObstacleWaves : XOffSet + (SpriteList()\Width * SpriteList()\ZoomLevel)
+      SpriteList()\x = XOffSet + i * GapBetweenObstacleWaves : XOffSet + (SpriteList()\Width * SpriteList()\ZoomLevel)
       SpriteList()\y = HeroBottom - (SpriteList()\Height * SpriteList()\ZoomLevel)
     Next
   Next
