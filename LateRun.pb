@@ -141,7 +141,7 @@ Procedure AddRandomObstaclePattern()
   For i.a = 1 To NumWaves
     QtdPatterns.a = CountString(ObstaclesPatterns, ";") + 1
     Pattern.s = StringField(ObstaclesPatterns, Random(QtdPatterns, 1), ";") : XOffSet.f = ScreenWidth()
-    ShouldAddBird = Bool((Score >= 600) And (Random(100, 1) / 100 < 0.5) And (i = NumWaves));only adds birds at the last wave
+    ShouldAddBird = Bool((Score >= 600) And (i = NumWaves) And (Random(100, 1) / 100.0 < 0.5));only adds birds at the last wave
     If ShouldAddBird : Pattern = Pattern + "B" : EndIf
     For j.a = 1  To Len(Pattern)
       Obstacle.a = Asc(Mid(Pattern, j, 1)) : AddElement(SpriteList())
