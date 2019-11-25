@@ -135,7 +135,7 @@ Procedure StartGame();we start a new game here
   Score = 0.0 : ScoreModuloDivisor = 100 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
 EndProcedure
 Procedure AddRandomObstaclePattern()
-  NumWaves.a = Random(4, 1) : GapBetweenObstacleWaves.f = Random(ObstaclesVelocity * BaseVelocity * 2, (ObstaclesVelocity * BaseVelocity))
+  NumWaves.a = Random(4, 1) : GapBetweenObstacleWaves.f = Random(ObstaclesVelocity * BaseVelocity * 0.7 * 1.1, (ObstaclesVelocity * BaseVelocity * 0.7))
   Debug "NumWaves:" + Str(NumWaves)
   Debug "GapBetweenObstacleWaves:" + StrF(GapBetweenObstacleWaves)
   For i.a = 1 To NumWaves
