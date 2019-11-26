@@ -11,7 +11,7 @@ Structure TSprite
   SpriteNum.i : IsObstacle.b
   NumFrames.a : CurrentFrame.a
   Width.u : Height.u;the original width and height of the sprite, before zooming
-  AnimationTimer.f
+  AnimationTimer.f : IsAnimated.a
   IsAlive.b
   DrawOrder.u;the sprites with lower draw order must be drawn first
   ZoomLevel.f;the actual width or height it must be multiplied by the zoomlevel value
@@ -34,18 +34,19 @@ Global Hero_Sprite_Path.s = BasePath + "graphics" + #PS$ + "hero.png"
 Global Dog_Sprite_Path.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent.png";Represented by D below
 Global BusinessMan_Sprite_Path.s = BasePath + "graphics" + #PS$ + "businessman-24x48.png";R below
 Global Fence_Sprite_Path.s = BasePath + "graphics" + #PS$ + "fence-16x24.png";F below
-Global Bird_Sprite_Path.s = BasePath + "graphics" + #PS$ + "bird-32x32.png";B below
+Global Bird_Sprite_Path.s = BasePath + "graphics" + #PS$ + "bird-32x32.png"  ;B below
+Global Ground_Sprite_Path.s = BasePath + "graphics" + #PS$ + "ground-32x32.png"
 Global ObstaclesPatterns.s = "D;DD;R;RR;RRR;RRF;F;FF;FFF;FFR;FR;RFF;RF;FRF";each letter represents an obstacle, two letters together means the obstacles are side by side
 Procedure SetCollisionRect(*Sprite.TSprite, Offset.a = 8)
   *Sprite\CollisionRect\w = (*Sprite\Width * *Sprite\ZoomLevel) - Offset : *Sprite\CollisionRect\h = (*Sprite\Height * *Sprite\ZoomLevel) - Offset
   *Sprite\CollisionRect\x = (*Sprite\x + (*Sprite\Width * *Sprite\ZoomLevel) / 2) - *Sprite\CollisionRect\w / 2
   *Sprite\CollisionRect\y = (*Sprite\y + (*Sprite\Height * *Sprite\ZoomLevel) / 2) - *Sprite\CollisionRect\h / 2
 EndProcedure
-Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpritePath.s, IsObstacle.b, NumFrames.a, IsAlive.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1)
+Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpritePath.s, IsObstacle.b, NumFrames.a, IsAnimated.a, IsAlive.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1)
   *Sprite\x = x : *Sprite\y = y : *Sprite\XVelocity = XVel : *Sprite\YVelocity = YVel
   *Sprite\SpriteNum = LoadSprite(#PB_Any, SpritePath) : *Sprite\IsObstacle = IsObstacle : *Sprite\IsAlive = IsAlive : *Sprite\ZoomLevel = ZoomLevel
   *Sprite\Update = UpdateProc : *Sprite\CurrentFrame = 0 : *Sprite\AnimationTimer = 1 / #Animation_FPS
-  *Sprite\NumFrames = NumFrames : *Sprite\Width = SpriteWidth(*Sprite\SpriteNum) / NumFrames
+  *Sprite\NumFrames = NumFrames : *Sprite\IsAnimated = IsAnimated : *Sprite\Width = SpriteWidth(*Sprite\SpriteNum) / NumFrames
   *Sprite\Height = SpriteHeight(*Sprite\SpriteNum);we assume all sprite sheets are only one row
   SetCollisionRect(*Sprite)
 EndProcedure
@@ -90,6 +91,7 @@ Procedure UpdateObstacle(ObstacleAddress.i, Elapsed.f);obstacles only goes to th
 EndProcedure
 Procedure UpdateSpriteList(List SpriteList.TSprite(), Elapsed.f)
   ForEach SpriteList()
+    If SpriteList()\Update = #Null : Continue : EndIf
     *CurrentSprite.TSprite = @SpriteList();save the current sprite being updated
     ResetList(SpriteList());reset the list so that the update functions can loop the spritelist from the beginning
     *CurrentSprite\Update(*CurrentSprite, Elapsed);call the update function on the current sprite
@@ -99,12 +101,14 @@ EndProcedure
 Procedure DisplaySpriteList(List SpriteList.TSprite(), Elapsed.f)
   ForEach SpriteList()
     ClipSprite(SpriteList()\SpriteNum, SpriteList()\CurrentFrame * SpriteList()\Width, 0, SpriteList()\Width, SpriteList()\Height);here we clip the current frame that we want to display
-    ZoomSprite(SpriteList()\SpriteNum, SpriteList()\Width * SpriteList()\ZoomLevel, SpriteList()\Height * SpriteList()\ZoomLevel);the zoom must be applied after the clipping(https://www.purebasic.fr/english/viewtopic.php?p=421807#p421807)
-    If SpriteList()\AnimationTimer <= 0.0;time to change frames and reset the animation timer
-      SpriteList()\CurrentFrame = IIf(Bool(SpriteList()\CurrentFrame + 1 > SpriteList()\NumFrames - 1), 0, SpriteList()\CurrentFrame + 1)
-      SpriteList()\AnimationTimer = 1 / #Animation_FPS
+    ZoomSprite(SpriteList()\SpriteNum, SpriteList()\Width * SpriteList()\ZoomLevel, SpriteList()\Height * SpriteList()\ZoomLevel) ;the zoom must be applied after the clipping(https://www.purebasic.fr/english/viewtopic.php?p=421807#p421807)
+    If SpriteList()\IsAnimated
+      If SpriteList()\AnimationTimer <= 0.0;time to change frames and reset the animation timer
+        SpriteList()\CurrentFrame = IIf(Bool(SpriteList()\CurrentFrame + 1 > SpriteList()\NumFrames - 1), 0, SpriteList()\CurrentFrame + 1)
+        SpriteList()\AnimationTimer = 1 / #Animation_FPS
+      EndIf
+      SpriteList()\AnimationTimer - Elapsed;run the timer to get to the next frame
     EndIf
-    SpriteList()\AnimationTimer - Elapsed;run the timer to get to the next frame
     DisplayTransparentSprite(SpriteList()\SpriteNum, SpriteList()\x, SpriteList()\y)
   Next
   If DrawCollisionBoxes
@@ -123,22 +127,35 @@ Procedure RemoveSpritesFromList(List SpriteList.TSprite())
     EndIf
   Next
 EndProcedure
+Procedure LoadGroundSprites(List SpriteList.TSprite())
+  NumHorizontalGroundSprites.u = 640 / 32 : NumVerticalGroundSprites.u = Round((480 - HeroBottom) / 32, #PB_Round_Up)
+  Debug "horizontal:" + Str(NumHorizontalGroundSprites)
+  Debug "vertical:" + Str(NumVerticalGroundSprites)
+  
+  For i = 1 To NumHorizontalGroundSprites
+    For j = 1 To NumVerticalGroundSprites
+      AddElement(SpriteList())
+      InitializeSprite(@SpriteList(), (i - 1) * 32, HeroBottom + (j - 1) * 32, 0, 0, Ground_Sprite_Path, #False, 1, #False, #True, #Null, 1)
+      SpriteList()\CurrentFrame = IIf(Bool(j = 1), 1, 0)
+      ;SpriteList()\CurrentFrame = 0
+    Next
+  Next
+  
+EndProcedure
 Procedure StartGame();we start a new game here
   ForEach SpriteList() : SpriteList()\IsAlive = #False :Next;mark all sprites as not alive, so we can remove them
   RemoveSpritesFromList(SpriteList())
   AddElement(SpriteList()) : *Hero = @SpriteList()
-  InitializeSprite(*Hero, 0, 0, 0, 0, Hero_Sprite_Path, #False, 4, #True, @UpdateHero(), 4)
+  InitializeSprite(*Hero, 0, 0, 0, 0, Hero_Sprite_Path, #False, 4, #True, #True, @UpdateHero(), 4)
   *Hero\x = *Hero\Width * *Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : *Hero\y = HeroGroundY;starting position for the hero
   HeroDistanceFromScreenEdge = ScreenWidth() - (*Hero\CollisionRect\x + *Hero\CollisionRect\w) : HeroBottom = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel)
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False : IsGameOver = #False : IsInvincibleMode = #False
   BaseVelocity = 1.0 : ObstaclesVelocity = 250.0
   Score = 0.0 : ScoreModuloDivisor = 100 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
+  LoadGroundSprites(SpriteList())
 EndProcedure
 Procedure AddRandomObstaclePattern()
   NumWaves.a = Random(6, 2) : MaxObstacleGapMultiplier.f = 1.0 + (Random(100) / 100.0) : GapBetweenObstacleWaves.f = Random(ObstaclesVelocity * BaseVelocity * #Obstacle_Gap_Time_Multiplier * MaxObstacleGapMultiplier, (ObstaclesVelocity * BaseVelocity * #Obstacle_Gap_Time_Multiplier))
-  Debug "MaxObstacleGapMultiplier:" + StrF(MaxObstacleGapMultiplier)
-  Debug "NumWaves:" + Str(NumWaves)
-  Debug "GapBetweenObstacleWaves:" + StrF(GapBetweenObstacleWaves)
   For i.a = 1 To NumWaves
     QtdPatterns.a = CountString(ObstaclesPatterns, ";") + 1
     Pattern.s = StringField(ObstaclesPatterns, Random(QtdPatterns, 1), ";") : XOffSet.f = ScreenWidth()
@@ -147,10 +164,10 @@ Procedure AddRandomObstaclePattern()
     For j.a = 1  To Len(Pattern)
       Obstacle.a = Asc(Mid(Pattern, j, 1)) : AddElement(SpriteList())
       Select Obstacle
-        Case 'D' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Dog_Sprite_Path, #True, 3, #True, @UpdateObstacle(), 1)
-        Case 'R' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, BusinessMan_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
-        Case 'F' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, #True, 1, #True, @UpdateObstacle(), 1)
-        Case 'B' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity * 0.7, 0, Bird_Sprite_Path, #True, 5, #True, @UpdateObstacle(), 1)
+        Case 'D' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Dog_Sprite_Path, #True, 3, #True, #True, @UpdateObstacle(), 1)
+        Case 'R' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, BusinessMan_Sprite_Path, #True, 1, #True, #True, @UpdateObstacle(), 1)
+        Case 'F' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, #True, 1, #True, #True, @UpdateObstacle(), 1)
+        Case 'B' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity * 0.7, 0, Bird_Sprite_Path, #True, 5, #True, #True, @UpdateObstacle(), 1)
       EndSelect
       SpriteList()\x = XOffSet + i * GapBetweenObstacleWaves : XOffSet + (SpriteList()\Width * SpriteList()\ZoomLevel)
       If Obstacle <> 'B';its not a bird, should be added at the hero level at the ground
@@ -175,7 +192,6 @@ Procedure UpdateGameLogic(Elapsed.f)
   EndIf
   If RoundedScore <> 0 And RoundedScore % ScoreModuloDivisor = 0
     BaseVelocity * 1.1 : ScoreModuloDivisor + 100
-    Debug "current vel:" + StrF(ObstaclesVelocity * BaseVelocity)
   EndIf
 EndProcedure
 Procedure DrawBitmapText(x.f, y.f, Text.s, CharWidthPx.a = 16, CharHeightPx.a = 24);draw text is too slow on linux, let's try to use bitmap fonts
