@@ -28,8 +28,8 @@ Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.q, SoundInit
 Global NewList SpriteList.TSprite(), *Hero.TSprite, HeroRect.TRect;
 Global HeroDistanceFromScreenEdge.f, IsHeroOnGround.b = #True, HeroGroundY.f, HeroBottom.f, HeroJumpTimer.f, IsHeroJumping.b = #False
 Global BaseVelocity.f, ObstaclesVelocity.f
-Global Score.f, ScoreModuloDivisor.l, DrawCollisionBoxes.a = #False, PausedGame.a = #False, MaxObstacleGapMultiplier.f
-#Animation_FPS = 12 : #Bitmap_Font_Sprite = 0 : #Min_Obstacle_Gap_Multiplier = 1.1 : #Obstacle_Gap_Time_Multiplier = 0.7
+Global Score.f, ScoreModuloDivisor.l, DrawCollisionBoxes.a = #False, PausedGame.a = #False
+#Animation_FPS = 12 : #Bitmap_Font_Sprite = 0 : #Obstacle_Gap_Time_Multiplier = 0.8
 Global Hero_Sprite_Path.s = BasePath + "graphics" + #PS$ + "hero.png"
 Global Dog_Sprite_Path.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent.png";Represented by D below
 Global BusinessMan_Sprite_Path.s = BasePath + "graphics" + #PS$ + "businessman-24x48.png";R below
@@ -131,11 +131,12 @@ Procedure StartGame();we start a new game here
   *Hero\x = *Hero\Width * *Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : *Hero\y = HeroGroundY;starting position for the hero
   HeroDistanceFromScreenEdge = ScreenWidth() - (*Hero\CollisionRect\x + *Hero\CollisionRect\w) : HeroBottom = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel)
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False : IsGameOver = #False : IsInvincibleMode = #False
-  BaseVelocity = 1.0 : ObstaclesVelocity = 250.0 : MaxObstacleGapMultiplier = 2.0
+  BaseVelocity = 1.0 : ObstaclesVelocity = 250.0
   Score = 0.0 : ScoreModuloDivisor = 100 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
 EndProcedure
 Procedure AddRandomObstaclePattern()
-  NumWaves.a = Random(5, 2) : GapBetweenObstacleWaves.f = Random(ObstaclesVelocity * BaseVelocity * #Obstacle_Gap_Time_Multiplier * MaxObstacleGapMultiplier, (ObstaclesVelocity * BaseVelocity * #Obstacle_Gap_Time_Multiplier))
+  NumWaves.a = Random(5, 2) : MaxObstacleGapMultiplier.f = 1.0 + (Random(100, 1) / 100.0) : GapBetweenObstacleWaves.f = Random(ObstaclesVelocity * BaseVelocity * #Obstacle_Gap_Time_Multiplier * MaxObstacleGapMultiplier, (ObstaclesVelocity * BaseVelocity * #Obstacle_Gap_Time_Multiplier))
+  Debug "MaxObstacleGapMultiplier:" + StrF(MaxObstacleGapMultiplier)
   Debug "NumWaves:" + Str(NumWaves)
   Debug "GapBetweenObstacleWaves:" + StrF(GapBetweenObstacleWaves)
   For i.a = 1 To NumWaves
@@ -173,9 +174,8 @@ Procedure UpdateGameLogic(Elapsed.f)
     AddRandomObstaclePattern()
   EndIf
   If RoundedScore <> 0 And RoundedScore % ScoreModuloDivisor = 0
-    BaseVelocity * 1.1 : ScoreModuloDivisor + 100 : MaxObstacleGapMultiplier = IIf(Bool(MaxObstacleGapMultiplier - 0.1 > #Min_Obstacle_Gap_Multiplier), MaxObstacleGapMultiplier - 0.1, #Min_Obstacle_Gap_Multiplier)
+    BaseVelocity * 1.1 : ScoreModuloDivisor + 100
     Debug "current vel:" + StrF(ObstaclesVelocity * BaseVelocity)
-    Debug "MaxObstacleGapMultiplier:" + StrF(MaxObstacleGapMultiplier)
   EndIf
 EndProcedure
 Procedure DrawBitmapText(x.f, y.f, Text.s, CharWidthPx.a = 16, CharHeightPx.a = 24);draw text is too slow on linux, let's try to use bitmap fonts
