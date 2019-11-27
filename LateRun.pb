@@ -35,7 +35,7 @@ Global Dog_Sprite_Path.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent
 Global BusinessMan_Sprite_Path.s = BasePath + "graphics" + #PS$ + "businessman-24x48.png";R below
 Global Fence_Sprite_Path.s = BasePath + "graphics" + #PS$ + "fence-16x24.png";F below
 Global Bird_Sprite_Path.s = BasePath + "graphics" + #PS$ + "bird-32x32.png"  ;B below
-Global Ground_Sprite_Path.s = BasePath + "graphics" + #PS$ + "ground-32x32.png"
+Global Ground_Sprite_Path.s = BasePath + "graphics" + #PS$ + "ground-672x160.png"
 Global ObstaclesPatterns.s = "D;DD;R;RR;RRR;RRF;F;FF;FFF;FFR;FR;RFF;RF;FRF";each letter represents an obstacle, two letters together means the obstacles are side by side
 Procedure SetCollisionRect(*Sprite.TSprite, Offset.a = 8)
   *Sprite\CollisionRect\w = (*Sprite\Width * *Sprite\ZoomLevel) - Offset : *Sprite\CollisionRect\h = (*Sprite\Height * *Sprite\ZoomLevel) - Offset
@@ -92,8 +92,12 @@ EndProcedure
 Procedure UpdateGround(GroundTileAdrress.i, Elapsed.f)
   ;ProcedureReturn #False
   *GroundTile.TSprite = GroundTileAdrress : *GroundTile\x + (-ObstaclesVelocity * BaseVelocity) * Elapsed
-  If *GroundTile\x <= -32.0
-    *GroundTile\x = ScreenWidth()
+  If *GroundTile\x <= -(*GroundTile\Width * *GroundTile\ZoomLevel)
+    *GroundTile\IsAlive = #False
+    AddElement(SpriteList())
+    InitializeSprite(@SpriteList(), 0, 0, 0, 0, Ground_Sprite_Path, #False, 1, #False, #True, @UpdateGround(), 1)
+    SpriteList()\x = *GroundTile\x + (*GroundTile\Width * *GroundTile\ZoomLevel)
+    SpriteList()\y = HeroBottom
   EndIf
 EndProcedure
 Procedure UpdateSpriteList(List SpriteList.TSprite(), Elapsed.f)
@@ -135,16 +139,10 @@ Procedure RemoveSpritesFromList(List SpriteList.TSprite())
   Next
 EndProcedure
 Procedure LoadGroundSprites(List SpriteList.TSprite())
-  NumHorizontalGroundSprites.u = 640 / 32 + 1 : NumVerticalGroundSprites.u = Round((480 - HeroBottom) / 32, #PB_Round_Up)
-  Debug "horizontal:" + Str(NumHorizontalGroundSprites)
-  Debug "vertical:" + Str(NumVerticalGroundSprites)
-  For i = 1 To NumHorizontalGroundSprites
-    For j = 1 To NumVerticalGroundSprites
-      AddElement(SpriteList())
-      InitializeSprite(@SpriteList(), -32 + (i - 1) * 32, HeroBottom + (j - 1) * 32, 0, 0, Ground_Sprite_Path, #False, 2, #False, #True, @UpdateGround(), 1)
-      SpriteList()\CurrentFrame = IIf(Bool(j = 1), 1, 0)
-    Next
-  Next
+  AddElement(SpriteList())
+  InitializeSprite(@SpriteList(), 0, 0, 0, 0, Ground_Sprite_Path, #False, 1, #False, #True, @UpdateGround(), 1)
+  SpriteList()\x = ScreenWidth() / 2 - (SpriteList()\Width * SpriteList()\ZoomLevel / 2)
+  SpriteList()\y = HeroBottom
 EndProcedure
 Procedure StartGame();we start a new game here
   ForEach SpriteList() : SpriteList()\IsAlive = #False :Next;mark all sprites as not alive, so we can remove them
