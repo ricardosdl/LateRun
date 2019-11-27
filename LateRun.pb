@@ -25,7 +25,7 @@ Procedure.a AABBCollision(*Rect1.TRect, *Rect2.TRect)
                        *Rect1\y + *Rect1\h > *Rect2\y)
 EndProcedure
 Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.q, SoundInitiated.b, IsGameOver.a, IsInvincibleMode.a
-Global NewList SpriteList.TSprite(), *Hero.TSprite
+Global NewList SpriteList.TSprite(), *Hero.TSprite, *Ground1.TSprite, *Ground2.TSprite
 Global HeroDistanceFromScreenEdge.f, IsHeroOnGround.b = #True, HeroGroundY.f, HeroBottom.f, HeroJumpTimer.f, IsHeroJumping.b = #False
 Global BaseVelocity.f, ObstaclesVelocity.f
 Global Score.f, ScoreModuloDivisor.l, DrawCollisionBoxes.a = #False, PausedGame.a = #False
@@ -90,15 +90,15 @@ Procedure UpdateObstacle(ObstacleAddress.i, Elapsed.f);obstacles only goes to th
   SetCollisionRect(*Obstacle)
 EndProcedure
 Procedure UpdateGround(GroundTileAdrress.i, Elapsed.f)
-  ;ProcedureReturn #False
-  *GroundTile.TSprite = GroundTileAdrress : *GroundTile\x + (-ObstaclesVelocity * BaseVelocity) * Elapsed
+  *GroundTile.TSprite = GroundTileAdrress
   If *GroundTile\x <= -(*GroundTile\Width * *GroundTile\ZoomLevel)
-    *GroundTile\IsAlive = #False
-    AddElement(SpriteList())
-    InitializeSprite(@SpriteList(), 0, 0, 0, 0, Ground_Sprite_Path, #False, 1, #False, #True, @UpdateGround(), 1)
-    SpriteList()\x = *GroundTile\x + (*GroundTile\Width * *GroundTile\ZoomLevel)
-    SpriteList()\y = HeroBottom
+    If *GroundTile = *Ground1
+      *GroundTile\x = *Ground2\x + (*Ground2\Width * *Ground2\ZoomLevel)
+    ElseIf *GroundTile = *Ground2
+      *GroundTile\x = *Ground1\x + (*Ground1\Width * *Ground1\ZoomLevel)
+    EndIf
   EndIf
+  *GroundTile\x + (-ObstaclesVelocity * BaseVelocity) * Elapsed
 EndProcedure
 Procedure UpdateSpriteList(List SpriteList.TSprite(), Elapsed.f)
   ForEach SpriteList()
@@ -142,7 +142,11 @@ Procedure LoadGroundSprites(List SpriteList.TSprite())
   AddElement(SpriteList())
   InitializeSprite(@SpriteList(), 0, 0, 0, 0, Ground_Sprite_Path, #False, 1, #False, #True, @UpdateGround(), 1)
   SpriteList()\x = ScreenWidth() / 2 - (SpriteList()\Width * SpriteList()\ZoomLevel / 2)
-  SpriteList()\y = HeroBottom
+  SpriteList()\y = HeroBottom : *Ground1 = @SpriteList()
+  AddElement(SpriteList())
+  InitializeSprite(@SpriteList(), 0, 0, 0, 0, Ground_Sprite_Path, #False, 1, #False, #True, @UpdateGround(), 1)
+  SpriteList()\x = *Ground1\x + (*Ground1\Width * *Ground1\ZoomLevel)
+  SpriteList()\y = HeroBottom : *Ground2 = @SpriteList()
 EndProcedure
 Procedure StartGame();we start a new game here
   ForEach SpriteList() : SpriteList()\IsAlive = #False :Next;mark all sprites as not alive, so we can remove them
