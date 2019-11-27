@@ -25,7 +25,7 @@ Procedure.a AABBCollision(*Rect1.TRect, *Rect2.TRect)
                        *Rect1\y + *Rect1\h > *Rect2\y)
 EndProcedure
 Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.q, SoundInitiated.b, IsGameOver.a, IsInvincibleMode.a
-Global NewList SpriteList.TSprite(), *Hero.TSprite, HeroRect.TRect;
+Global NewList SpriteList.TSprite(), *Hero.TSprite
 Global HeroDistanceFromScreenEdge.f, IsHeroOnGround.b = #True, HeroGroundY.f, HeroBottom.f, HeroJumpTimer.f, IsHeroJumping.b = #False
 Global BaseVelocity.f, ObstaclesVelocity.f
 Global Score.f, ScoreModuloDivisor.l, DrawCollisionBoxes.a = #False, PausedGame.a = #False
