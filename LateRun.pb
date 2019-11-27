@@ -89,6 +89,13 @@ Procedure UpdateObstacle(ObstacleAddress.i, Elapsed.f);obstacles only goes to th
   *Obstacle\IsAlive = IIf(Bool(*Obstacle\x < -(*Obstacle\Width * *Obstacle\ZoomLevel)), #False, #True)
   SetCollisionRect(*Obstacle)
 EndProcedure
+Procedure UpdateGround(GroundTileAdrress.i, Elapsed.f)
+  ;ProcedureReturn #False
+  *GroundTile.TSprite = GroundTileAdrress : *GroundTile\x + (-ObstaclesVelocity * BaseVelocity) * Elapsed
+  If *GroundTile\x <= -32.0
+    *GroundTile\x = ScreenWidth()
+  EndIf
+EndProcedure
 Procedure UpdateSpriteList(List SpriteList.TSprite(), Elapsed.f)
   ForEach SpriteList()
     If SpriteList()\Update = #Null : Continue : EndIf
@@ -128,13 +135,13 @@ Procedure RemoveSpritesFromList(List SpriteList.TSprite())
   Next
 EndProcedure
 Procedure LoadGroundSprites(List SpriteList.TSprite())
-  NumHorizontalGroundSprites.u = 640 / 32 : NumVerticalGroundSprites.u = Round((480 - HeroBottom) / 32, #PB_Round_Up)
-  ;Debug "horizontal:" + Str(NumHorizontalGroundSprites)
-  ;Debug "vertical:" + Str(NumVerticalGroundSprites)
+  NumHorizontalGroundSprites.u = 640 / 32 + 1 : NumVerticalGroundSprites.u = Round((480 - HeroBottom) / 32, #PB_Round_Up)
+  Debug "horizontal:" + Str(NumHorizontalGroundSprites)
+  Debug "vertical:" + Str(NumVerticalGroundSprites)
   For i = 1 To NumHorizontalGroundSprites
     For j = 1 To NumVerticalGroundSprites
       AddElement(SpriteList())
-      InitializeSprite(@SpriteList(), (i - 1) * 32, HeroBottom + (j - 1) * 32, 0, 0, Ground_Sprite_Path, #False, 2, #False, #True, #Null, 1)
+      InitializeSprite(@SpriteList(), -32 + (i - 1) * 32, HeroBottom + (j - 1) * 32, 0, 0, Ground_Sprite_Path, #False, 2, #False, #True, @UpdateGround(), 1)
       SpriteList()\CurrentFrame = IIf(Bool(j = 1), 1, 0)
     Next
   Next
@@ -153,6 +160,7 @@ Procedure StartGame();we start a new game here
 EndProcedure
 Procedure AddRandomObstaclePattern()
   NumWaves.a = Random(6, 2) : MaxObstacleGapMultiplier.f = 1.0 + (Random(100) / 100.0) : GapBetweenObstacleWaves.f = Random(ObstaclesVelocity * BaseVelocity * #Obstacle_Gap_Time_Multiplier * MaxObstacleGapMultiplier, (ObstaclesVelocity * BaseVelocity * #Obstacle_Gap_Time_Multiplier))
+  Debug "ObstaclesVelocity * BaseVelocity:" + StrF(ObstaclesVelocity * BaseVelocity)
   For i.a = 1 To NumWaves
     QtdPatterns.a = CountString(ObstaclesPatterns, ";") + 1
     Pattern.s = StringField(ObstaclesPatterns, Random(QtdPatterns, 1), ";") : XOffSet.f = ScreenWidth()
