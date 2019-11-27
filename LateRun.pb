@@ -129,18 +129,15 @@ Procedure RemoveSpritesFromList(List SpriteList.TSprite())
 EndProcedure
 Procedure LoadGroundSprites(List SpriteList.TSprite())
   NumHorizontalGroundSprites.u = 640 / 32 : NumVerticalGroundSprites.u = Round((480 - HeroBottom) / 32, #PB_Round_Up)
-  Debug "horizontal:" + Str(NumHorizontalGroundSprites)
-  Debug "vertical:" + Str(NumVerticalGroundSprites)
-  
+  ;Debug "horizontal:" + Str(NumHorizontalGroundSprites)
+  ;Debug "vertical:" + Str(NumVerticalGroundSprites)
   For i = 1 To NumHorizontalGroundSprites
     For j = 1 To NumVerticalGroundSprites
       AddElement(SpriteList())
       InitializeSprite(@SpriteList(), (i - 1) * 32, HeroBottom + (j - 1) * 32, 0, 0, Ground_Sprite_Path, #False, 2, #False, #True, #Null, 1)
       SpriteList()\CurrentFrame = IIf(Bool(j = 1), 1, 0)
-      ;SpriteList()\CurrentFrame = 0
     Next
   Next
-  
 EndProcedure
 Procedure StartGame();we start a new game here
   ForEach SpriteList() : SpriteList()\IsAlive = #False :Next;mark all sprites as not alive, so we can remove them
