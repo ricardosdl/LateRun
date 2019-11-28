@@ -90,15 +90,18 @@ Procedure UpdateObstacle(ObstacleAddress.i, Elapsed.f);obstacles only goes to th
   SetCollisionRect(*Obstacle)
 EndProcedure
 Procedure UpdateGround(GroundTileAdrress.i, Elapsed.f)
-  *GroundTile.TSprite = GroundTileAdrress
-  If *GroundTile\x <= -(*GroundTile\Width * *GroundTile\ZoomLevel)
-    If *GroundTile = *Ground1
-      *GroundTile\x = *Ground2\x + (*Ground2\Width * *Ground2\ZoomLevel)
-    ElseIf *GroundTile = *Ground2
-      *GroundTile\x = *Ground1\x + (*Ground1\Width * *Ground1\ZoomLevel)
-    EndIf
+  If GroundTileAdrress <> *Ground1 : ProcedureReturn : EndIf;we only process ground1, ground2 position is relative to ground1
+  *Ground1\x + (-ObstaclesVelocity * BaseVelocity) * Elapsed
+  If *Ground1\x <= -(*Ground1\Width * *Ground1\ZoomLevel)
+    *Ground1\x = *Ground2\x + (*Ground2\Width * *Ground2\ZoomLevel) - 1
+  ElseIf *Ground2\x <= -(*Ground2\Width * *Ground2\ZoomLevel)
+    *Ground2\x = *Ground1\x + (*Ground1\Width * *Ground1\ZoomLevel) - 1
   EndIf
-  *GroundTile\x + (-ObstaclesVelocity * BaseVelocity) * Elapsed
+  If *Ground1\x <= *Ground2\x
+    *Ground2\x = *Ground1\x + (*Ground1\Width * *Ground1\ZoomLevel) - 1
+  Else
+    *Ground2\x = *Ground1\x - (*Ground2\Width * *Ground2\ZoomLevel) + 1
+  EndIf
 EndProcedure
 Procedure UpdateSpriteList(List SpriteList.TSprite(), Elapsed.f)
   ForEach SpriteList()
