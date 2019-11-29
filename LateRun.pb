@@ -229,8 +229,7 @@ If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_
       ElapsedTimneInS = IIf(Bool(ElapsedTimneInS >= 0.05), 0.05, ElapsedTimneInS)
       ElapsedTimneInS = IIf(IsGameOver, 0.0, ElapsedTimneInS) : ElapsedTimneInS = IIf(PausedGame, 0.0, ElapsedTimneInS)
       UpdateGameLogic(ElapsedTimneInS) : UpdateSpriteList(SpriteList(), ElapsedTimneInS) : DisplaySpriteList(SpriteList(), ElapsedTimneInS)
-      DrawHUD()
-      RemoveSpritesFromList(SpriteList())
+      DrawHUD() : RemoveSpritesFromList(SpriteList())
     Until ExitGame
   EndIf
 EndIf
