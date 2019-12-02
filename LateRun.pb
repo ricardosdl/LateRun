@@ -198,7 +198,12 @@ Procedure.u CountSprites(SpriteType.a)
   ProcedureReturn Qtd
 EndProcedure
 Procedure AddRandomClouds()
-  
+  NumClouds.a = Random(3, 1)
+  For i.a = 1 To NumClouds
+    AddElement(SpriteList())
+    InitializeSprite(@SpriteList(), Random(ScreenWidth() + 40, ScreenWidth()), Random(HeroBottom, 0), -ObstaclesVelocity * BaseVelocity, 0, Clouds_Sprite_Path, #Cloud, 3, #False, #True, @UpdateObstacle(), 3)
+    SpriteList()\CurrentFrame = Random(2, 0)
+  Next
 EndProcedure
 Procedure UpdateGameLogic(Elapsed.f)
   Score + Elapsed * 10 : RoundedScore.i = Int(Round(Score, #PB_Round_Nearest))
@@ -206,7 +211,7 @@ Procedure UpdateGameLogic(Elapsed.f)
     AddRandomObstaclePattern()
   EndIf
   If RoundedScore <> 0 And RoundedScore % ScoreModuloDivisor = 0
-    BaseVelocity * 1.1 : ScoreModuloDivisor + 100
+    BaseVelocity * 1.1 : ScoreModuloDivisor + 100 : AddRandomClouds()
   EndIf
 EndProcedure
 Procedure DrawBitmapText(x.f, y.f, Text.s, CharWidthPx.a = 16, CharHeightPx.a = 24);draw text is too slow on linux, let's try to use bitmap fonts
