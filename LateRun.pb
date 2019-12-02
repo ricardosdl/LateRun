@@ -249,7 +249,7 @@ If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_
         EndSelect
       Until Event = 0 ; Quit the event loop only when no more events are available
       FlipBuffers()
-      ClearScreen(RGB(0,0,0))
+      ClearScreen(RGB($66, $CC, $FF))
       ExamineKeyboard() : UpdateInput()
       ElapsedTimneInS = (ElapsedMilliseconds() - StartTimeInMs) / 1000.0
       ElapsedTimneInS = IIf(Bool(ElapsedTimneInS >= 0.05), 0.05, ElapsedTimneInS)
