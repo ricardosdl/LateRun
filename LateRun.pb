@@ -36,6 +36,7 @@ Global BusinessMan_Sprite_Path.s = BasePath + "graphics" + #PS$ + "businessman-2
 Global Fence_Sprite_Path.s = BasePath + "graphics" + #PS$ + "fence-16x24.png";F below
 Global Bird_Sprite_Path.s = BasePath + "graphics" + #PS$ + "bird-32x32.png"  ;B below
 Global Ground_Sprite_Path.s = BasePath + "graphics" + #PS$ + "ground-672x160.png"
+Global Clouds_Sprite_Path.s = BasePath + "graphics" + #PS$ + "clouds-120x40.png"
 Global ObstaclesPatterns.s = "D;DD;R;RR;RRR;RRF;F;FF;FFF;FFR;FR;RFF;RF;FRF";each letter represents an obstacle, two letters together means the obstacles are side by side
 Procedure SetCollisionRect(*Sprite.TSprite, Offset.a = 8)
   *Sprite\CollisionRect\w = (*Sprite\Width * *Sprite\ZoomLevel) - Offset : *Sprite\CollisionRect\h = (*Sprite\Height * *Sprite\ZoomLevel) - Offset
@@ -194,6 +195,9 @@ Procedure.u CountObstacles()
     If SpriteList()\IsObstacle : QtdObstacles + 1 : EndIf
   Next
   ProcedureReturn QtdObstacles
+EndProcedure
+Procedure AddRandomClouds()
+  
 EndProcedure
 Procedure UpdateGameLogic(Elapsed.f)
   Score + Elapsed * 10 : RoundedScore.i = Int(Round(Score, #PB_Round_Nearest))
