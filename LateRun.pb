@@ -44,10 +44,10 @@ Procedure SetCollisionRect(*Sprite.TSprite, Offset.a = 8)
   *Sprite\CollisionRect\x = (*Sprite\x + (*Sprite\Width * *Sprite\ZoomLevel) / 2) - *Sprite\CollisionRect\w / 2
   *Sprite\CollisionRect\y = (*Sprite\y + (*Sprite\Height * *Sprite\ZoomLevel) / 2) - *Sprite\CollisionRect\h / 2
 EndProcedure
-Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpritePath.s, SpriteType.a, NumFrames.a, IsAnimated.a, IsAlive.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1)
+Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpritePath.s, SpriteType.a, NumFrames.a, IsAnimated.a, IsAlive.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1, DrawOrder.u = 0)
   *Sprite\x = x : *Sprite\y = y : *Sprite\XVelocity = XVel : *Sprite\YVelocity = YVel
   *Sprite\SpriteNum = LoadSprite(#PB_Any, SpritePath) : *Sprite\SpriteType = SpriteType : *Sprite\IsAlive = IsAlive : *Sprite\ZoomLevel = ZoomLevel
-  *Sprite\Update = UpdateProc : *Sprite\CurrentFrame = 0 : *Sprite\AnimationTimer = 1 / #Animation_FPS
+  *Sprite\Update = UpdateProc : *Sprite\CurrentFrame = 0 : *Sprite\AnimationTimer = 1 / #Animation_FPS : *Sprite\DrawOrder = DrawOrder
   *Sprite\NumFrames = NumFrames : *Sprite\IsAnimated = IsAnimated : *Sprite\Width = SpriteWidth(*Sprite\SpriteNum) / NumFrames
   *Sprite\Height = SpriteHeight(*Sprite\SpriteNum);we assume all sprite sheets are only one row
   SetCollisionRect(*Sprite)
@@ -115,6 +115,7 @@ Procedure UpdateSpriteList(List SpriteList.TSprite(), Elapsed.f)
   Next
 EndProcedure
 Procedure DisplaySpriteList(List SpriteList.TSprite(), Elapsed.f)
+  SortStructuredList(SpriteList(), #PB_Sort_Ascending, OffsetOf(TSprite\DrawOrder), TypeOf(TSprite\DrawOrder))
   ForEach SpriteList()
     ClipSprite(SpriteList()\SpriteNum, SpriteList()\CurrentFrame * SpriteList()\Width, 0, SpriteList()\Width, SpriteList()\Height);here we clip the current frame that we want to display
     ZoomSprite(SpriteList()\SpriteNum, SpriteList()\Width * SpriteList()\ZoomLevel, SpriteList()\Height * SpriteList()\ZoomLevel) ;the zoom must be applied after the clipping(https://www.purebasic.fr/english/viewtopic.php?p=421807#p421807)
@@ -145,11 +146,11 @@ Procedure RemoveSpritesFromList(List SpriteList.TSprite())
 EndProcedure
 Procedure LoadGroundSprites(List SpriteList.TSprite())
   AddElement(SpriteList())
-  InitializeSprite(@SpriteList(), 0, 0, 0, 0, Ground_Sprite_Path, #Ground, 1, #False, #True, @UpdateGround(), 1)
+  InitializeSprite(@SpriteList(), 0, 0, 0, 0, Ground_Sprite_Path, #Ground, 1, #False, #True, @UpdateGround(), 1, 1)
   SpriteList()\x = ScreenWidth() / 2 - (SpriteList()\Width * SpriteList()\ZoomLevel / 2)
   SpriteList()\y = HeroBottom : *Ground1 = @SpriteList()
   AddElement(SpriteList())
-  InitializeSprite(@SpriteList(), 0, 0, 0, 0, Ground_Sprite_Path, #Ground, 1, #False, #True, @UpdateGround(), 1)
+  InitializeSprite(@SpriteList(), 0, 0, 0, 0, Ground_Sprite_Path, #Ground, 1, #False, #True, @UpdateGround(), 1, 1)
   SpriteList()\x = *Ground1\x + (*Ground1\Width * *Ground1\ZoomLevel)
   SpriteList()\y = HeroBottom : *Ground2 = @SpriteList()
 EndProcedure
@@ -157,7 +158,7 @@ Procedure StartGame();we start a new game here
   ForEach SpriteList() : SpriteList()\IsAlive = #False :Next;mark all sprites as not alive, so we can remove them
   RemoveSpritesFromList(SpriteList())
   AddElement(SpriteList()) : *Hero = @SpriteList()
-  InitializeSprite(*Hero, 0, 0, 0, 0, Hero_Sprite_Path, #Hero, 4, #True, #True, @UpdateHero(), 4)
+  InitializeSprite(*Hero, 0, 0, 0, 0, Hero_Sprite_Path, #Hero, 4, #True, #True, @UpdateHero(), 4, 2)
   *Hero\x = *Hero\Width * *Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : *Hero\y = HeroGroundY;starting position for the hero
   HeroDistanceFromScreenEdge = ScreenWidth() - (*Hero\CollisionRect\x + *Hero\CollisionRect\w) : HeroBottom = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel)
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False : IsGameOver = #False : IsInvincibleMode = #False
@@ -176,10 +177,10 @@ Procedure AddRandomObstaclePattern()
     For j.a = 1  To Len(Pattern)
       Obstacle.a = Asc(Mid(Pattern, j, 1)) : AddElement(SpriteList())
       Select Obstacle
-        Case 'D' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Dog_Sprite_Path, #Obstacle, 3, #True, #True, @UpdateObstacle(), 1)
-        Case 'R' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, BusinessMan_Sprite_Path, #Obstacle, 1, #True, #True, @UpdateObstacle(), 1)
-        Case 'F' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, #Obstacle, 1, #True, #True, @UpdateObstacle(), 1)
-        Case 'B' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity * 0.7, 0, Bird_Sprite_Path, #Obstacle, 5, #True, #True, @UpdateObstacle(), 1)
+        Case 'D' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Dog_Sprite_Path, #Obstacle, 3, #True, #True, @UpdateObstacle(), 1, 3)
+        Case 'R' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, BusinessMan_Sprite_Path, #Obstacle, 1, #True, #True, @UpdateObstacle(), 1, 3)
+        Case 'F' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, #Obstacle, 1, #True, #True, @UpdateObstacle(), 1, 3)
+        Case 'B' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity * 0.7, 0, Bird_Sprite_Path, #Obstacle, 5, #True, #True, @UpdateObstacle(), 1, 3)
       EndSelect
       SpriteList()\x = XOffSet + i * GapBetweenObstacleWaves : XOffSet + (SpriteList()\Width * SpriteList()\ZoomLevel)
       If Obstacle <> 'B';its not a bird, should be added at the hero level at the ground
@@ -201,7 +202,7 @@ Procedure AddRandomClouds()
   NumClouds.a = Random(3, 1)
   For i.a = 1 To NumClouds
     AddElement(SpriteList())
-    InitializeSprite(@SpriteList(), Random(ScreenWidth() + 40, ScreenWidth()), Random(HeroBottom, 0), -ObstaclesVelocity * BaseVelocity, 0, Clouds_Sprite_Path, #Cloud, 3, #False, #True, @UpdateObstacle(), 3)
+    InitializeSprite(@SpriteList(), Random(ScreenWidth() + 40, ScreenWidth()), Random(HeroBottom, 0), -ObstaclesVelocity * BaseVelocity, 0, Clouds_Sprite_Path, #Cloud, 3, #False, #True, @UpdateObstacle(), 3, 0)
     SpriteList()\CurrentFrame = Random(2, 0)
   Next
 EndProcedure
