@@ -5,10 +5,11 @@ Structure TRect
   x.f : y.f : w.f : h.f
 EndStructure
 Prototype UpdateSpriteProc(SpriteAddress.i, Elapsed.f);our prototype procedure that each sprite can call to update itself
+EnumerationBinary SpriteTypes : #Hero : #Obstacle : #Ground : #Cloud : EndEnumeration
 Structure TSprite
   x.f : y.f;position
   XVelocity.f : YVelocity.f;velociy in each axis
-  SpriteNum.i : IsObstacle.b
+  SpriteNum.i : SpriteType.a
   NumFrames.a : CurrentFrame.a
   Width.u : Height.u;the original width and height of the sprite, before zooming
   AnimationTimer.f : IsAnimated.a
@@ -43,9 +44,9 @@ Procedure SetCollisionRect(*Sprite.TSprite, Offset.a = 8)
   *Sprite\CollisionRect\x = (*Sprite\x + (*Sprite\Width * *Sprite\ZoomLevel) / 2) - *Sprite\CollisionRect\w / 2
   *Sprite\CollisionRect\y = (*Sprite\y + (*Sprite\Height * *Sprite\ZoomLevel) / 2) - *Sprite\CollisionRect\h / 2
 EndProcedure
-Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpritePath.s, IsObstacle.b, NumFrames.a, IsAnimated.a, IsAlive.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1)
+Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpritePath.s, SpriteType.a, NumFrames.a, IsAnimated.a, IsAlive.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1)
   *Sprite\x = x : *Sprite\y = y : *Sprite\XVelocity = XVel : *Sprite\YVelocity = YVel
-  *Sprite\SpriteNum = LoadSprite(#PB_Any, SpritePath) : *Sprite\IsObstacle = IsObstacle : *Sprite\IsAlive = IsAlive : *Sprite\ZoomLevel = ZoomLevel
+  *Sprite\SpriteNum = LoadSprite(#PB_Any, SpritePath) : *Sprite\SpriteType = SpriteType : *Sprite\IsAlive = IsAlive : *Sprite\ZoomLevel = ZoomLevel
   *Sprite\Update = UpdateProc : *Sprite\CurrentFrame = 0 : *Sprite\AnimationTimer = 1 / #Animation_FPS
   *Sprite\NumFrames = NumFrames : *Sprite\IsAnimated = IsAnimated : *Sprite\Width = SpriteWidth(*Sprite\SpriteNum) / NumFrames
   *Sprite\Height = SpriteHeight(*Sprite\SpriteNum);we assume all sprite sheets are only one row
@@ -78,7 +79,7 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
   EndIf
   SetCollisionRect(*HeroSprite)
   ForEach SpriteList()
-    If SpriteList()\IsObstacle
+    If SpriteList()\SpriteType & #Obstacle
       If AABBCollision(@*HeroSprite\CollisionRect, @SpriteList()\CollisionRect)
         IsGameOver = Bool(Not IsInvincibleMode)
       EndIf
@@ -144,11 +145,11 @@ Procedure RemoveSpritesFromList(List SpriteList.TSprite())
 EndProcedure
 Procedure LoadGroundSprites(List SpriteList.TSprite())
   AddElement(SpriteList())
-  InitializeSprite(@SpriteList(), 0, 0, 0, 0, Ground_Sprite_Path, #False, 1, #False, #True, @UpdateGround(), 1)
+  InitializeSprite(@SpriteList(), 0, 0, 0, 0, Ground_Sprite_Path, #Ground, 1, #False, #True, @UpdateGround(), 1)
   SpriteList()\x = ScreenWidth() / 2 - (SpriteList()\Width * SpriteList()\ZoomLevel / 2)
   SpriteList()\y = HeroBottom : *Ground1 = @SpriteList()
   AddElement(SpriteList())
-  InitializeSprite(@SpriteList(), 0, 0, 0, 0, Ground_Sprite_Path, #False, 1, #False, #True, @UpdateGround(), 1)
+  InitializeSprite(@SpriteList(), 0, 0, 0, 0, Ground_Sprite_Path, #Ground, 1, #False, #True, @UpdateGround(), 1)
   SpriteList()\x = *Ground1\x + (*Ground1\Width * *Ground1\ZoomLevel)
   SpriteList()\y = HeroBottom : *Ground2 = @SpriteList()
 EndProcedure
@@ -156,7 +157,7 @@ Procedure StartGame();we start a new game here
   ForEach SpriteList() : SpriteList()\IsAlive = #False :Next;mark all sprites as not alive, so we can remove them
   RemoveSpritesFromList(SpriteList())
   AddElement(SpriteList()) : *Hero = @SpriteList()
-  InitializeSprite(*Hero, 0, 0, 0, 0, Hero_Sprite_Path, #False, 4, #True, #True, @UpdateHero(), 4)
+  InitializeSprite(*Hero, 0, 0, 0, 0, Hero_Sprite_Path, #Hero, 4, #True, #True, @UpdateHero(), 4)
   *Hero\x = *Hero\Width * *Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : *Hero\y = HeroGroundY;starting position for the hero
   HeroDistanceFromScreenEdge = ScreenWidth() - (*Hero\CollisionRect\x + *Hero\CollisionRect\w) : HeroBottom = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel)
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False : IsGameOver = #False : IsInvincibleMode = #False
@@ -175,10 +176,10 @@ Procedure AddRandomObstaclePattern()
     For j.a = 1  To Len(Pattern)
       Obstacle.a = Asc(Mid(Pattern, j, 1)) : AddElement(SpriteList())
       Select Obstacle
-        Case 'D' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Dog_Sprite_Path, #True, 3, #True, #True, @UpdateObstacle(), 1)
-        Case 'R' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, BusinessMan_Sprite_Path, #True, 1, #True, #True, @UpdateObstacle(), 1)
-        Case 'F' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, #True, 1, #True, #True, @UpdateObstacle(), 1)
-        Case 'B' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity * 0.7, 0, Bird_Sprite_Path, #True, 5, #True, #True, @UpdateObstacle(), 1)
+        Case 'D' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Dog_Sprite_Path, #Obstacle, 3, #True, #True, @UpdateObstacle(), 1)
+        Case 'R' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, BusinessMan_Sprite_Path, #Obstacle, 1, #True, #True, @UpdateObstacle(), 1)
+        Case 'F' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, #Obstacle, 1, #True, #True, @UpdateObstacle(), 1)
+        Case 'B' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity * 0.7, 0, Bird_Sprite_Path, #Obstacle, 5, #True, #True, @UpdateObstacle(), 1)
       EndSelect
       SpriteList()\x = XOffSet + i * GapBetweenObstacleWaves : XOffSet + (SpriteList()\Width * SpriteList()\ZoomLevel)
       If Obstacle <> 'B';its not a bird, should be added at the hero level at the ground
@@ -192,7 +193,7 @@ EndProcedure
 Procedure.u CountObstacles()
   QtdObstacles.u = 0
   ForEach SpriteList()
-    If SpriteList()\IsObstacle : QtdObstacles + 1 : EndIf
+    If SpriteList()\SpriteType & #Obstacle : QtdObstacles + 1 : EndIf
   Next
   ProcedureReturn QtdObstacles
 EndProcedure
