@@ -189,16 +189,16 @@ Procedure AddRandomObstaclePattern()
     Next
   Next
 EndProcedure
-Procedure.u CountObstacles()
-  QtdObstacles.u = 0
+Procedure.u CountSprites(SpriteType.a)
+  Qtd.u = 0
   ForEach SpriteList()
-    If SpriteList()\SpriteType & #Obstacle : QtdObstacles + 1 : EndIf
+    If SpriteList()\SpriteType & SpriteType : Qtd + 1 : EndIf
   Next
-  ProcedureReturn QtdObstacles
+  ProcedureReturn Qtd
 EndProcedure
 Procedure UpdateGameLogic(Elapsed.f)
   Score + Elapsed * 10 : RoundedScore.i = Int(Round(Score, #PB_Round_Nearest))
-  If CountObstacles() = 0
+  If CountSprites(#Obstacle) = 0
     AddRandomObstaclePattern()
   EndIf
   If RoundedScore <> 0 And RoundedScore % ScoreModuloDivisor = 0
