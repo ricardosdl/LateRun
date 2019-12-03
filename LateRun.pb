@@ -252,7 +252,7 @@ EndProcedure
 Procedure ShowSky(Elapsed.f)
   Static SkyColorIndexDirection.b = 1;the sky color goes form day light skycolors(0) to night skycolors(4)
   SkyColor = SkyColors(SkyColorIndex) : ClearScreen(SkyColor) : SkyTimer + Elapsed
-  If SkyTimer >= 20;each 40 seconds we transition to day or night and back
+  If SkyTimer >= 40;each 40 seconds we transition to day or night and back
     SkyTransition = #True : SkyTransitionTimer = 0.0 : SkyTimer = 0
   EndIf
   If SkyTransition;here we perform the sky transition changing the skycolorindex to display different colors
