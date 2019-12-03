@@ -29,6 +29,9 @@ Global BasePath.s = "data" + #PS$, ElapsedTimneInS.f, StartTimeInMs.q, SoundInit
 Global NewList SpriteList.TSprite(), *Hero.TSprite, *Ground1.TSprite, *Ground2.TSprite
 Global HeroDistanceFromScreenEdge.f, IsHeroOnGround.b = #True, HeroGroundY.f, HeroBottom.f, HeroJumpTimer.f, IsHeroJumping.b = #False
 Global BaseVelocity.f, ObstaclesVelocity.f, CloudTimer.f, MaxCloudTimer.f
+Global Dim SkyColors.i(4) : SkyColors(0) = RGB($81, $b1, $d9) : SkyColors(1) = RGB($ff, $99, $33) : SkyColors(2) = RGB($ff, $66, $33)
+SkyColors(3) = RGB($69, $69, $69) : SkyColors(4) = RGB(0, 0, 0)
+Global SkyColor.i, SkyTimer.f, SkyColorIndex.i = 0, SkyTransition.a = #False, SkyTransitionTimer.f
 Global Score.f, ScoreModuloDivisor.l, DrawCollisionBoxes.a = #False, PausedGame.a = #False
 #Animation_FPS = 12 : #Bitmap_Font_Sprite = 0 : #Obstacle_Gap_Time_Multiplier = 0.8 : #Cloud_Vel_Multiplier = 0.25
 Global Hero_Sprite_Path.s = BasePath + "graphics" + #PS$ + "hero.png"
@@ -171,12 +174,13 @@ Procedure StartGame();we start a new game here
   HeroDistanceFromScreenEdge = ScreenWidth() - (*Hero\CollisionRect\x + *Hero\CollisionRect\w) : HeroBottom = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel)
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False : IsGameOver = #False : IsInvincibleMode = #False
   BaseVelocity = 1.0 : ObstaclesVelocity = 250.0
+  SkyColor = SkyColors(SkyColorIndex) : SkyTimer = 0.0 : SkyColorIndex = 0 : SkyTransition = #False : SkyTransitionTimer = 0.0
   Score = 0.0 : ScoreModuloDivisor = 100 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
   LoadGroundSprites(SpriteList()) : AddRandomClouds(Random(5, 3), #True) : CloudTimer = 0.0 : MaxCloudTimer = ScreenWidth() / (#Cloud_Vel_Multiplier * ObstaclesVelocity * BaseVelocity)
 EndProcedure
 Procedure AddRandomObstaclePattern()
   NumWaves.a = Random(6, 2) : MaxObstacleGapMultiplier.f = 1.0 + (Random(100) / 100.0) : GapBetweenObstacleWaves.f = Random(ObstaclesVelocity * BaseVelocity * #Obstacle_Gap_Time_Multiplier * MaxObstacleGapMultiplier, (ObstaclesVelocity * BaseVelocity * #Obstacle_Gap_Time_Multiplier))
-  Debug "ObstaclesVelocity * BaseVelocity:" + StrF(ObstaclesVelocity * BaseVelocity)
+  ;Debug "ObstaclesVelocity * BaseVelocity:" + StrF(ObstaclesVelocity * BaseVelocity)
   For i.a = 1 To NumWaves
     QtdPatterns.a = CountString(ObstaclesPatterns, ";") + 1
     Pattern.s = StringField(ObstaclesPatterns, Random(QtdPatterns, 1), ";") : XOffSet.f = ScreenWidth()
@@ -245,6 +249,21 @@ Procedure UpdateInput()
     NextScore.f = Round(Score / 100, #PB_Round_Up) * 100 : Score = NextScore
   EndIf
 EndProcedure
+Procedure ShowSky(Elapsed.f)
+  Static SkyColorIndexDirection.b = 1;the sky color goes form day light skycolors(0) to night skycolors(4)
+  SkyColor = SkyColors(SkyColorIndex) : ClearScreen(SkyColor) : SkyTimer + Elapsed
+  If SkyTimer >= 40;each 40 seconds we transition to day or night and back
+    SkyTransition = #True : SkyTransitionTimer = 0.0 : SkyTimer = 0
+  EndIf
+  If SkyTransition
+    SkyTransitionTimer + Elapsed
+    If SkyTransitionTimer > 10 /  ArraySize(SkyColors());10 seconds divided by the number of sky color transitions
+      SkyColorIndex = SkyColorIndex + SkyColorIndexDirection
+      SkyTransition = IIf(Bool(SkyColorIndex = 0 Or SkyColorIndex = 4), #False, #True);stops the transition when we reach the day or night sky index
+      If Not SkyTransition : SkyColorIndexDirection * -1 : EndIf
+    EndIf
+  EndIf
+EndProcedure
 If InitSprite() = 0 Or InitKeyboard() = 0
   MessageRequester("Error", "Sprite system or keyboard system can't be initialized", 0)
   End
@@ -264,7 +283,7 @@ If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_
         EndSelect
       Until Event = 0 ; Quit the event loop only when no more events are available
       FlipBuffers()
-      ClearScreen(RGB($81, $b1, $d9));#81b1d9
+      ShowSky(ElapsedTimneInS)
       ExamineKeyboard() : UpdateInput()
       ElapsedTimneInS = (ElapsedMilliseconds() - StartTimeInMs) / 1000.0
       ElapsedTimneInS = IIf(Bool(ElapsedTimneInS >= 0.05), 0.05, ElapsedTimneInS)
