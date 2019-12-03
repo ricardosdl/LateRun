@@ -17,7 +17,7 @@ Structure TSprite
   DrawOrder.u;the sprites with lower draw order must be drawn first
   ZoomLevel.f;the actual width or height it must be multiplied by the zoomlevel value
   Update.UpdateSpriteProc;the address of the update procedure that will update sprites positions and velocities, also handles inputs
-  CollisionRect.TRect
+  CollisionRect.TRect : SpriteNumNight.i
 EndStructure
 Procedure.a AABBCollision(*Rect1.TRect, *Rect2.TRect)
   ProcedureReturn Bool(*Rect1\x < *Rect2\x + *Rect2\w And 
@@ -34,12 +34,12 @@ SkyColors(3) = RGB($69, $69, $69) : SkyColors(4) = RGB(0, 0, 0)
 Global SkyColor.i, SkyTimer.f, SkyColorIndex.i = 0, SkyTransition.a = #False, SkyTransitionTimer.f
 Global Score.f, ScoreModuloDivisor.l, DrawCollisionBoxes.a = #False, PausedGame.a = #False
 #Animation_FPS = 12 : #Bitmap_Font_Sprite = 0 : #Obstacle_Gap_Time_Multiplier = 0.8 : #Cloud_Vel_Multiplier = 0.25
-Global Hero_Sprite_Path.s = BasePath + "graphics" + #PS$ + "hero.png"
-Global Dog_Sprite_Path.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent.png";Represented by D below
-Global BusinessMan_Sprite_Path.s = BasePath + "graphics" + #PS$ + "businessman-24x48.png";R below
-Global Fence_Sprite_Path.s = BasePath + "graphics" + #PS$ + "fence-16x24.png";F below
-Global Bird_Sprite_Path.s = BasePath + "graphics" + #PS$ + "bird-32x32.png"  ;B below
-Global Ground_Sprite_Path.s = BasePath + "graphics" + #PS$ + "ground-672x160.png"
+Global Hero_Sprite_Path.s = BasePath + "graphics" + #PS$ + "hero.png", Hero_Sprite_Path_Night.s = BasePath + "graphics" + #PS$ + "hero-greyed.png"
+Global Dog_Sprite_Path.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent.png", Dog_Sprite_Path_Night.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent-greyed.png";Represented by D below;Represented by D below
+Global BusinessMan_Sprite_Path.s = BasePath + "graphics" + #PS$ + "businessman-24x48.png", BusinessMan_Sprite_Path_Night.s = BasePath + "graphics" + #PS$ + "businessman-24x48-greyed.png";R below;R below
+Global Fence_Sprite_Path.s = BasePath + "graphics" + #PS$ + "fence-16x24.png", Fence_Sprite_Path_Night.s = BasePath + "graphics" + #PS$ + "fence-16x24-greyed.png";F below;F below
+Global Bird_Sprite_Path.s = BasePath + "graphics" + #PS$ + "bird-32x32.png", Bird_Sprite_Path_Night.s = BasePath + "graphics" + #PS$ + "bird-32x32-greyed.png"  ;B below
+Global Ground_Sprite_Path.s = BasePath + "graphics" + #PS$ + "ground-672x160.png", Ground_Sprite_Path_Night.s = BasePath + "graphics" + #PS$ + "ground-672x160-greyed.png"
 Global Clouds_Sprite_Path.s = BasePath + "graphics" + #PS$ + "clouds-120x40.png"
 Global ObstaclesPatterns.s = "D;DD;R;RR;RRR;RRF;F;FF;FFF;FFR;FR;RFF;RF;FRF";each letter represents an obstacle, two letters together means the obstacles are side by side
 Procedure SetCollisionRect(*Sprite.TSprite, Offset.a = 8)
@@ -47,13 +47,13 @@ Procedure SetCollisionRect(*Sprite.TSprite, Offset.a = 8)
   *Sprite\CollisionRect\x = (*Sprite\x + (*Sprite\Width * *Sprite\ZoomLevel) / 2) - *Sprite\CollisionRect\w / 2
   *Sprite\CollisionRect\y = (*Sprite\y + (*Sprite\Height * *Sprite\ZoomLevel) / 2) - *Sprite\CollisionRect\h / 2
 EndProcedure
-Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpritePath.s, SpriteType.a, NumFrames.a, IsAnimated.a, IsAlive.b, UpdateProc.UpdateSpriteProc, ZoomLevel.f = 1, DrawOrder.u = 0)
+Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpritePath.s, SpriteType.a, NumFrames.a, IsAnimated.a, IsAlive.b, UpdateProc.UpdateSpriteProc, SpriteNumNight.i, ZoomLevel.f = 1, DrawOrder.u = 0)
   *Sprite\x = x : *Sprite\y = y : *Sprite\XVelocity = XVel : *Sprite\YVelocity = YVel
   *Sprite\SpriteNum = LoadSprite(#PB_Any, SpritePath) : *Sprite\SpriteType = SpriteType : *Sprite\IsAlive = IsAlive : *Sprite\ZoomLevel = ZoomLevel
   *Sprite\Update = UpdateProc : *Sprite\CurrentFrame = 0 : *Sprite\AnimationTimer = 1 / #Animation_FPS : *Sprite\DrawOrder = DrawOrder
   *Sprite\NumFrames = NumFrames : *Sprite\IsAnimated = IsAnimated : *Sprite\Width = SpriteWidth(*Sprite\SpriteNum) / NumFrames
   *Sprite\Height = SpriteHeight(*Sprite\SpriteNum);we assume all sprite sheets are only one row
-  SetCollisionRect(*Sprite)
+  *Sprite\SpriteNumNight = SpriteNumNight : SetCollisionRect(*Sprite)
 EndProcedure
 Global StartJump.q = 0, LowestHeroY.f = 1000
 Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero sprite state here
@@ -119,9 +119,10 @@ Procedure UpdateSpriteList(List SpriteList.TSprite(), Elapsed.f)
 EndProcedure
 Procedure DisplaySpriteList(List SpriteList.TSprite(), Elapsed.f)
   SortStructuredList(SpriteList(), #PB_Sort_Ascending, OffsetOf(TSprite\DrawOrder), TypeOf(TSprite\DrawOrder))
-  ForEach SpriteList()
-    ClipSprite(SpriteList()\SpriteNum, SpriteList()\CurrentFrame * SpriteList()\Width, 0, SpriteList()\Width, SpriteList()\Height);here we clip the current frame that we want to display
-    ZoomSprite(SpriteList()\SpriteNum, SpriteList()\Width * SpriteList()\ZoomLevel, SpriteList()\Height * SpriteList()\ZoomLevel) ;the zoom must be applied after the clipping(https://www.purebasic.fr/english/viewtopic.php?p=421807#p421807)
+  ForEach SpriteList() : IsNight.a = Bool(SkyColorIndex = 4)
+    SpriteToDisplay.i = IIf(Bool(Not IsNight Or SpriteList()\SpriteNumNight = -1), SpriteList()\SpriteNum, SpriteList()\SpriteNumNight)
+    ClipSprite(SpriteToDisplay, SpriteList()\CurrentFrame * SpriteList()\Width, 0, SpriteList()\Width, SpriteList()\Height);here we clip the current frame that we want to display
+    ZoomSprite(SpriteToDisplay, SpriteList()\Width * SpriteList()\ZoomLevel, SpriteList()\Height * SpriteList()\ZoomLevel) ;the zoom must be applied after the clipping(https://www.purebasic.fr/english/viewtopic.php?p=421807#p421807)
     If SpriteList()\IsAnimated
       If SpriteList()\AnimationTimer <= 0.0;time to change frames and reset the animation timer
         SpriteList()\CurrentFrame = IIf(Bool(SpriteList()\CurrentFrame + 1 > SpriteList()\NumFrames - 1), 0, SpriteList()\CurrentFrame + 1)
@@ -129,7 +130,7 @@ Procedure DisplaySpriteList(List SpriteList.TSprite(), Elapsed.f)
       EndIf
       SpriteList()\AnimationTimer - Elapsed;run the timer to get to the next frame
     EndIf
-    DisplayTransparentSprite(SpriteList()\SpriteNum, SpriteList()\x, SpriteList()\y)
+    DisplayTransparentSprite(SpriteToDisplay, SpriteList()\x, SpriteList()\y)
   Next
   If DrawCollisionBoxes
     StartDrawing(ScreenOutput()) : DrawingMode(#PB_2DDrawing_Outlined)
@@ -142,18 +143,20 @@ EndProcedure
 Procedure RemoveSpritesFromList(List SpriteList.TSprite())
   ForEach SpriteList()
     If Not SpriteList()\IsAlive
-      FreeSprite(SpriteList()\SpriteNum)
+      FreeSprite(SpriteList()\SpriteNum) : If SpriteList()\SpriteNumNight <> -1 : FreeSprite(SpriteList()\SpriteNumNight) : EndIf
       DeleteElement(SpriteList())
     EndIf
   Next
 EndProcedure
 Procedure LoadGroundSprites(List SpriteList.TSprite())
   AddElement(SpriteList())
-  InitializeSprite(@SpriteList(), 0, 0, 0, 0, Ground_Sprite_Path, #Ground, 1, #False, #True, @UpdateGround(), 1, 1)
+  GroundNight.i = LoadSprite(#PB_Any, Ground_Sprite_Path_Night)
+  InitializeSprite(@SpriteList(), 0, 0, 0, 0, Ground_Sprite_Path, #Ground, 1, #False, #True, @UpdateGround(), GroundNight, 1, 1)
   SpriteList()\x = ScreenWidth() / 2 - (SpriteList()\Width * SpriteList()\ZoomLevel / 2)
   SpriteList()\y = HeroBottom : *Ground1 = @SpriteList()
   AddElement(SpriteList())
-  InitializeSprite(@SpriteList(), 0, 0, 0, 0, Ground_Sprite_Path, #Ground, 1, #False, #True, @UpdateGround(), 1, 1)
+  GroundNight = LoadSprite(#PB_Any, Ground_Sprite_Path_Night)
+  InitializeSprite(@SpriteList(), 0, 0, 0, 0, Ground_Sprite_Path, #Ground, 1, #False, #True, @UpdateGround(), GroundNight, 1, 1)
   SpriteList()\x = *Ground1\x + (*Ground1\Width * *Ground1\ZoomLevel)
   SpriteList()\y = HeroBottom : *Ground2 = @SpriteList()
 EndProcedure
@@ -161,7 +164,7 @@ Procedure AddRandomClouds(NumCloudsToAdd.a, AddOnScreen.a)
   For i.a = 1 To NumCloudsToAdd
     AddElement(SpriteList())
     CloudX.f = IIf(Bool(AddOnScreen), Random(ScreenWidth(), 0), Random(2 * ScreenWidth(), ScreenWidth()))
-    InitializeSprite(@SpriteList(), CloudX, Random(HeroBottom, 0), #Cloud_Vel_Multiplier * -ObstaclesVelocity * BaseVelocity, 0, Clouds_Sprite_Path, #Cloud, 3, #False, #True, @UpdateObstacle(), 3, 0)
+    InitializeSprite(@SpriteList(), CloudX, Random(HeroBottom, 0), #Cloud_Vel_Multiplier * -ObstaclesVelocity * BaseVelocity, 0, Clouds_Sprite_Path, #Cloud, 3, #False, #True, @UpdateObstacle(), -1, 3, 0)
     SpriteList()\CurrentFrame = Random(2, 0)
   Next
 EndProcedure
@@ -169,7 +172,8 @@ Procedure StartGame();we start a new game here
   ForEach SpriteList() : SpriteList()\IsAlive = #False :Next;mark all sprites as not alive, so we can remove them
   RemoveSpritesFromList(SpriteList())
   AddElement(SpriteList()) : *Hero = @SpriteList()
-  InitializeSprite(*Hero, 0, 0, 0, 0, Hero_Sprite_Path, #Hero, 4, #True, #True, @UpdateHero(), 4, 2)
+  HeroNight.i = LoadSprite(#PB_Any, Hero_Sprite_Path_Night)
+  InitializeSprite(*Hero, 0, 0, 0, 0, Hero_Sprite_Path, #Hero, 4, #True, #True, @UpdateHero(), HeroNight, 4, 2)
   *Hero\x = *Hero\Width * *Hero\ZoomLevel : HeroGroundY = ScreenHeight() / 2 * 1.25 : *Hero\y = HeroGroundY;starting position for the hero
   HeroDistanceFromScreenEdge = ScreenWidth() - (*Hero\CollisionRect\x + *Hero\CollisionRect\w) : HeroBottom = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel)
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False : IsGameOver = #False : IsInvincibleMode = #False
@@ -189,10 +193,18 @@ Procedure AddRandomObstaclePattern()
     For j.a = 1  To Len(Pattern)
       Obstacle.a = Asc(Mid(Pattern, j, 1)) : AddElement(SpriteList())
       Select Obstacle
-        Case 'D' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Dog_Sprite_Path, #Obstacle, 3, #True, #True, @UpdateObstacle(), 1, 3)
-        Case 'R' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, BusinessMan_Sprite_Path, #Obstacle, 1, #True, #True, @UpdateObstacle(), 1, 3)
-        Case 'F' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, #Obstacle, 1, #True, #True, @UpdateObstacle(), 1, 3)
-        Case 'B' : InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity * 0.7, 0, Bird_Sprite_Path, #Obstacle, 5, #True, #True, @UpdateObstacle(), 1, 3)
+        Case 'D'
+          DogNight.i = LoadSprite(#PB_Any, Dog_Sprite_Path_Night)
+          InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Dog_Sprite_Path, #Obstacle, 3, #True, #True, @UpdateObstacle(), DogNight, 1, 3)
+        Case 'R'
+          BusinessManNight.i = LoadSprite(#PB_Any, BusinessMan_Sprite_Path_Night)
+          InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, BusinessMan_Sprite_Path, #Obstacle, 1, #True, #True, @UpdateObstacle(), BusinessManNight, 1, 3)
+        Case 'F'
+          FenceNight.i = LoadSprite(#PB_Any, Fence_Sprite_Path_Night)
+          InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, #Obstacle, 1, #True, #True, @UpdateObstacle(), FenceNight, 1, 3)
+        Case 'B'
+          BirdNight.i = LoadSprite(#PB_Any, Bird_Sprite_Path_Night)
+          InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity * 0.7, 0, Bird_Sprite_Path, #Obstacle, 5, #True, #True, @UpdateObstacle(), BirdNight, 1, 3)
       EndSelect
       SpriteList()\x = XOffSet + i * GapBetweenObstacleWaves : XOffSet + (SpriteList()\Width * SpriteList()\ZoomLevel)
       If Obstacle <> 'B';its not a bird, should be added at the hero level at the ground
