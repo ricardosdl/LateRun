@@ -255,7 +255,7 @@ Procedure ShowSky(Elapsed.f)
   If SkyTimer >= 40;each 40 seconds we transition to day or night and back
     SkyTransition = #True : SkyTransitionTimer = 0.0 : SkyTimer = 0
   EndIf
-  If SkyTransition
+  If SkyTransition;here we perform the sky transition changing the skycolorindex to display different colors
     SkyTransitionTimer + Elapsed
     If SkyTransitionTimer > 10 /  ArraySize(SkyColors());10 seconds divided by the number of sky color transitions
       SkyColorIndex = SkyColorIndex + SkyColorIndexDirection
