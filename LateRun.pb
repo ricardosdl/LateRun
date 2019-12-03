@@ -154,6 +154,14 @@ Procedure LoadGroundSprites(List SpriteList.TSprite())
   SpriteList()\x = *Ground1\x + (*Ground1\Width * *Ground1\ZoomLevel)
   SpriteList()\y = HeroBottom : *Ground2 = @SpriteList()
 EndProcedure
+Procedure AddRandomClouds(NumCloudsToAdd.a, AddOnScreen.a)
+  For i.a = 1 To NumCloudsToAdd
+    AddElement(SpriteList())
+    CloudX.f = IIf(Bool(AddOnScreen), Random(ScreenWidth(), 0), Random(2 * ScreenWidth(), ScreenWidth()))
+    InitializeSprite(@SpriteList(), CloudX, Random(HeroBottom, 0), 0.25 * -ObstaclesVelocity * BaseVelocity, 0, Clouds_Sprite_Path, #Cloud, 3, #False, #True, @UpdateObstacle(), 3, 0)
+    SpriteList()\CurrentFrame = Random(2, 0)
+  Next
+EndProcedure
 Procedure StartGame();we start a new game here
   ForEach SpriteList() : SpriteList()\IsAlive = #False :Next;mark all sprites as not alive, so we can remove them
   RemoveSpritesFromList(SpriteList())
@@ -164,7 +172,7 @@ Procedure StartGame();we start a new game here
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False : IsGameOver = #False : IsInvincibleMode = #False
   BaseVelocity = 1.0 : ObstaclesVelocity = 250.0
   Score = 0.0 : ScoreModuloDivisor = 100 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
-  LoadGroundSprites(SpriteList())
+  LoadGroundSprites(SpriteList()) : AddRandomClouds(Random(5, 3), #True)
 EndProcedure
 Procedure AddRandomObstaclePattern()
   NumWaves.a = Random(6, 2) : MaxObstacleGapMultiplier.f = 1.0 + (Random(100) / 100.0) : GapBetweenObstacleWaves.f = Random(ObstaclesVelocity * BaseVelocity * #Obstacle_Gap_Time_Multiplier * MaxObstacleGapMultiplier, (ObstaclesVelocity * BaseVelocity * #Obstacle_Gap_Time_Multiplier))
@@ -198,21 +206,13 @@ Procedure.u CountSprites(SpriteType.a)
   Next
   ProcedureReturn Qtd
 EndProcedure
-Procedure AddRandomClouds()
-  NumClouds.a = Random(3, 1)
-  For i.a = 1 To NumClouds
-    AddElement(SpriteList())
-    InitializeSprite(@SpriteList(), Random(ScreenWidth() + 40, ScreenWidth()), Random(HeroBottom, 0), -ObstaclesVelocity * BaseVelocity, 0, Clouds_Sprite_Path, #Cloud, 3, #False, #True, @UpdateObstacle(), 3, 0)
-    SpriteList()\CurrentFrame = Random(2, 0)
-  Next
-EndProcedure
 Procedure UpdateGameLogic(Elapsed.f)
   Score + Elapsed * 10 : RoundedScore.i = Int(Round(Score, #PB_Round_Nearest))
   If CountSprites(#Obstacle) = 0
     AddRandomObstaclePattern()
   EndIf
   If RoundedScore <> 0 And RoundedScore % ScoreModuloDivisor = 0
-    BaseVelocity * 1.1 : ScoreModuloDivisor + 100 : AddRandomClouds()
+    BaseVelocity * 1.1 : ScoreModuloDivisor + 100 : AddRandomClouds(Random(8, 4), #False)
   EndIf
 EndProcedure
 Procedure DrawBitmapText(x.f, y.f, Text.s, CharWidthPx.a = 16, CharHeightPx.a = 24);draw text is too slow on linux, let's try to use bitmap fonts
