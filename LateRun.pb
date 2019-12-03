@@ -174,7 +174,7 @@ Procedure StartGame();we start a new game here
   HeroDistanceFromScreenEdge = ScreenWidth() - (*Hero\CollisionRect\x + *Hero\CollisionRect\w) : HeroBottom = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel)
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False : IsGameOver = #False : IsInvincibleMode = #False
   BaseVelocity = 1.0 : ObstaclesVelocity = 250.0
-  SkyColor = SkyColors(SkyColorIndex) : SkyTimer = 0.0 : SkyColorIndex = 0 : SkyTransition = #False : SkyTransitionTimer = 0.0
+  SkyColorIndex = 0 : SkyColor = SkyColors(SkyColorIndex) : SkyTimer = 0.0 : SkyTransition = #False : SkyTransitionTimer = 0.0
   Score = 0.0 : ScoreModuloDivisor = 100 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
   LoadGroundSprites(SpriteList()) : AddRandomClouds(Random(5, 3), #True) : CloudTimer = 0.0 : MaxCloudTimer = ScreenWidth() / (#Cloud_Vel_Multiplier * ObstaclesVelocity * BaseVelocity)
 EndProcedure
