@@ -31,7 +31,7 @@ Global HeroDistanceFromScreenEdge.f, IsHeroOnGround.b = #True, HeroGroundY.f, He
 Global BaseVelocity.f, ObstaclesVelocity.f, CloudTimer.f, MaxCloudTimer.f
 Global Dim SkyColors.i(4) : SkyColors(0) = RGB($81, $b1, $d9) : SkyColors(1) = RGB($ff, $99, $33) : SkyColors(2) = RGB($ff, $66, $33)
 SkyColors(3) = RGB($69, $69, $69) : SkyColors(4) = RGB(0, 0, 0)
-Global SkyColor.i, SkyTimer.f, SkyColorIndex.i = 0, SkyTransition.a = #False, SkyTransitionTimer.f
+Global SkyColor.i, SkyTimer.f, SkyColorIndex.i = 0, SkyTransition.a = #False, SkyTransitionTimer.f, SkyColorIndexDirection.b
 Global Score.f, ScoreModuloDivisor.l, DrawCollisionBoxes.a = #False, PausedGame.a = #False
 #Animation_FPS = 12 : #Bitmap_Font_Sprite = 0 : #Obstacle_Gap_Time_Multiplier = 0.8 : #Cloud_Vel_Multiplier = 0.25
 Global Hero_Sprite_Path.s = BasePath + "graphics" + #PS$ + "hero.png", Hero_Sprite_Path_Night.s = BasePath + "graphics" + #PS$ + "hero-greyed.png"
@@ -178,7 +178,7 @@ Procedure StartGame();we start a new game here
   HeroDistanceFromScreenEdge = ScreenWidth() - (*Hero\CollisionRect\x + *Hero\CollisionRect\w) : HeroBottom = HeroGroundY + (*Hero\Height * *Hero\ZoomLevel)
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False : IsGameOver = #False : IsInvincibleMode = #False
   BaseVelocity = 1.0 : ObstaclesVelocity = 250.0
-  SkyColorIndex = 0 : SkyColor = SkyColors(SkyColorIndex) : SkyTimer = 0.0 : SkyTransition = #False : SkyTransitionTimer = 0.0
+  SkyColorIndex = 0 : SkyColor = SkyColors(SkyColorIndex) : SkyTimer = 0.0 : SkyTransition = #False : SkyTransitionTimer = 0.0 : SkyColorIndexDirection = 1
   Score = 0.0 : ScoreModuloDivisor = 100 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
   LoadGroundSprites(SpriteList()) : AddRandomClouds(Random(5, 3), #True) : CloudTimer = 0.0 : MaxCloudTimer = ScreenWidth() / (#Cloud_Vel_Multiplier * ObstaclesVelocity * BaseVelocity)
 EndProcedure
@@ -262,7 +262,6 @@ Procedure UpdateInput()
   EndIf
 EndProcedure
 Procedure ShowSky(Elapsed.f)
-  Static SkyColorIndexDirection.b = 1;the sky color goes form day light skycolors(0) to night skycolors(4)
   SkyColor = SkyColors(SkyColorIndex) : ClearScreen(SkyColor) : SkyTimer + Elapsed
   If SkyTimer >= 40;each 40 seconds we transition to day or night and back
     SkyTransition = #True : SkyTransitionTimer = 0.0 : SkyTimer = 0
