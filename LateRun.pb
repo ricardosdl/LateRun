@@ -97,6 +97,7 @@ EndProcedure
 Procedure UpdateGround(GroundTileAdrress.i, Elapsed.f)
   If GroundTileAdrress <> *Ground1 : ProcedureReturn : EndIf;we only process ground1, ground2 position is relative to ground1
   *Ground1\x + (-ObstaclesVelocity * BaseVelocity) * Elapsed
+  *Ground2\x + (-ObstaclesVelocity * BaseVelocity) * Elapsed
   If *Ground1\x <= -(*Ground1\Width * *Ground1\ZoomLevel)
     *Ground1\x = *Ground2\x + (*Ground2\Width * *Ground2\ZoomLevel) - 1
   ElseIf *Ground2\x <= -(*Ground2\Width * *Ground2\ZoomLevel)
