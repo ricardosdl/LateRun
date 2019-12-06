@@ -5,19 +5,19 @@ Structure TRect
   x.f : y.f : w.f : h.f
 EndStructure
 Prototype UpdateSpriteProc(SpriteAddress.i, Elapsed.f);our prototype procedure that each sprite can call to update itself
-EnumerationBinary SpriteTypes : #Hero : #Obstacle : #Ground : #Cloud : EndEnumeration
+EnumerationBinary SpriteTypes : #Hero : #Obstacle : #Ground : #Cloud : EndEnumeration;we use to indentigy different type of sprites
 Structure TSprite
   x.f : y.f;position
   XVelocity.f : YVelocity.f;velociy in each axis
-  SpriteNum.i : SpriteType.a
+  SpriteNum.i : SpriteType.a;spritenum is the id returned by loadsprite and spritetype is one of the enumerations above
   NumFrames.a : CurrentFrame.a
   Width.u : Height.u;the original width and height of the sprite, before zooming
   AnimationTimer.f : IsAnimated.a
-  IsAlive.b
+  IsAlive.b;if a sprite is not alive it will be removed
   DrawOrder.u;the sprites with lower draw order must be drawn first
   ZoomLevel.f;the actual width or height it must be multiplied by the zoomlevel value
   Update.UpdateSpriteProc;the address of the update procedure that will update sprites positions and velocities, also handles inputs
-  CollisionRect.TRect : SpriteNumNight.i
+  CollisionRect.TRect : SpriteNumNight.i;the collision rect we use for the player and the sprite that is shown when it's night
 EndStructure
 Procedure.a AABBCollision(*Rect1.TRect, *Rect2.TRect)
   ProcedureReturn Bool(*Rect1\x < *Rect2\x + *Rect2\w And 
@@ -80,9 +80,9 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
   If Not IsHeroOnGround;kind like gravity here
     *HeroSprite\YVelocity + 2200 * Elapsed
   EndIf
-  SetCollisionRect(*HeroSprite)
+  SetCollisionRect(*HeroSprite);update the collision rectangle based on the new player hero position
   ForEach SpriteList()
-    If SpriteList()\SpriteType & #Obstacle
+    If SpriteList()\SpriteType & #Obstacle;we only check collisions with obstacles
       If AABBCollision(@*HeroSprite\CollisionRect, @SpriteList()\CollisionRect)
         IsGameOver = Bool(Not IsInvincibleMode)
       EndIf
@@ -97,7 +97,7 @@ EndProcedure
 Procedure UpdateGround(GroundTileAdrress.i, Elapsed.f)
   If GroundTileAdrress <> *Ground1 : ProcedureReturn : EndIf;we only process ground1, ground2 position is relative to ground1
   *Ground1\x + (-ObstaclesVelocity * BaseVelocity) * Elapsed
-  *Ground2\x + (-ObstaclesVelocity * BaseVelocity) * Elapsed
+  *Ground2\x + (-ObstaclesVelocity * BaseVelocity) * Elapsed;bump both gorunds to the left and then adjust their position accordingly
   If *Ground1\x <= -(*Ground1\Width * *Ground1\ZoomLevel)
     *Ground1\x = *Ground2\x + (*Ground2\Width * *Ground2\ZoomLevel) - 1
   ElseIf *Ground2\x <= -(*Ground2\Width * *Ground2\ZoomLevel)
@@ -111,7 +111,7 @@ Procedure UpdateGround(GroundTileAdrress.i, Elapsed.f)
 EndProcedure
 Procedure UpdateSpriteList(List SpriteList.TSprite(), Elapsed.f)
   ForEach SpriteList()
-    If SpriteList()\Update = #Null : Continue : EndIf
+    If SpriteList()\Update = #Null : Continue : EndIf;if there is no update procedure we go to the next
     *CurrentSprite.TSprite = @SpriteList();save the current sprite being updated
     ResetList(SpriteList());reset the list so that the update functions can loop the spritelist from the beginning
     *CurrentSprite\Update(*CurrentSprite, Elapsed);call the update function on the current sprite
@@ -120,7 +120,7 @@ Procedure UpdateSpriteList(List SpriteList.TSprite(), Elapsed.f)
 EndProcedure
 Procedure DisplaySpriteList(List SpriteList.TSprite(), Elapsed.f)
   SortStructuredList(SpriteList(), #PB_Sort_Ascending, OffsetOf(TSprite\DrawOrder), TypeOf(TSprite\DrawOrder))
-  ForEach SpriteList() : IsNight.a = Bool(SkyColorIndex = 4)
+  ForEach SpriteList() : IsNight.a = Bool(SkyColorIndex = 4);if it is night we draw the spritenumnight instead
     SpriteToDisplay.i = IIf(Bool(Not IsNight Or SpriteList()\SpriteNumNight = -1), SpriteList()\SpriteNum, SpriteList()\SpriteNumNight)
     ClipSprite(SpriteToDisplay, SpriteList()\CurrentFrame * SpriteList()\Width, 0, SpriteList()\Width, SpriteList()\Height);here we clip the current frame that we want to display
     ZoomSprite(SpriteToDisplay, SpriteList()\Width * SpriteList()\ZoomLevel, SpriteList()\Height * SpriteList()\ZoomLevel) ;the zoom must be applied after the clipping(https://www.purebasic.fr/english/viewtopic.php?p=421807#p421807)
@@ -272,7 +272,7 @@ Procedure ShowSky(Elapsed.f)
     If SkyTransitionTimer > 10 /  ArraySize(SkyColors());10 seconds divided by the number of sky color transitions
       SkyColorIndex = SkyColorIndex + SkyColorIndexDirection : SkyTransitionTimer = 0.0
       SkyTransition = IIf(Bool(SkyColorIndex = 0 Or SkyColorIndex = 4), #False, #True);stops the transition when we reach the day or night sky index
-      If Not SkyTransition : SkyColorIndexDirection * -1 : EndIf
+      If Not SkyTransition : SkyColorIndexDirection * -1 : EndIf;change the direction, from day to night or from night to day
     EndIf
   EndIf
 EndProcedure
@@ -294,8 +294,7 @@ If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_
             ExitGame = #True
         EndSelect
       Until Event = 0 ; Quit the event loop only when no more events are available
-      FlipBuffers()
-      ShowSky(ElapsedTimneInS)
+      FlipBuffers() : ShowSky(ElapsedTimneInS)
       ExamineKeyboard() : UpdateInput()
       ElapsedTimneInS = (ElapsedMilliseconds() - StartTimeInMs) / 1000.0
       ElapsedTimneInS = IIf(Bool(ElapsedTimneInS >= 0.05), 0.05, ElapsedTimneInS)
