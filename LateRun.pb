@@ -188,7 +188,7 @@ Procedure AddRandomObstaclePattern()
   ;Debug "ObstaclesVelocity * BaseVelocity:" + StrF(ObstaclesVelocity * BaseVelocity)
   For i.a = 1 To NumWaves
     QtdPatterns.a = CountString(ObstaclesPatterns, ";") + 1
-    Pattern.s = StringField(ObstaclesPatterns, Random(QtdPatterns, 1), ";") : XOffSet.f = ScreenWidth()
+    Pattern.s = StringField(ObstaclesPatterns, Random(QtdPatterns, 1), ";") : XOffSet.f = IIf(Bool(#Obstacle_Gap_Time_Multiplier * ObstaclesVelocity * BaseVelocity < HeroDistanceFromScreenEdge - 32), HeroDistanceFromScreenEdge - 32, #Obstacle_Gap_Time_Multiplier * ObstaclesVelocity * BaseVelocity)
     ShouldAddBird = Bool((Score >= 600) And (i = NumWaves) And (Random(100, 1) / 100.0 < 0.5));only adds birds at the last wave
     If ShouldAddBird : Pattern = Pattern + "B" : EndIf
     For j.a = 1  To Len(Pattern)
@@ -207,7 +207,7 @@ Procedure AddRandomObstaclePattern()
           BirdNight.i = LoadSprite(#PB_Any, Bird_Sprite_Path_Night)
           InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity * 0.7, 0, Bird_Sprite_Path, #Obstacle, 5, #True, #True, @UpdateObstacle(), BirdNight, 1, 3)
       EndSelect
-      SpriteList()\x = XOffSet + i * GapBetweenObstacleWaves : XOffSet + (SpriteList()\Width * SpriteList()\ZoomLevel)
+      SpriteList()\x = XOffSet + (i - 1) * GapBetweenObstacleWaves : XOffSet + (SpriteList()\Width * SpriteList()\ZoomLevel)
       If Obstacle <> 'B';its not a bird, should be added at the hero level at the ground
         SpriteList()\y = HeroBottom - (SpriteList()\Height * SpriteList()\ZoomLevel)
       Else;adding a bird
