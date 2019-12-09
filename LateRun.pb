@@ -33,8 +33,8 @@ Global BaseVelocity.f, ObstaclesVelocity.f, CloudTimer.f, MaxCloudTimer.f
 Global Dim SkyColors.i(4) : SkyColors(0) = RGB($81, $b1, $d9) : SkyColors(1) = RGB($ff, $99, $33) : SkyColors(2) = RGB($ff, $66, $33)
 SkyColors(3) = RGB($69, $69, $69) : SkyColors(4) = RGB(0, 0, 0)
 Global SkyColor.i, SkyTimer.f, SkyColorIndex.i = 0, SkyTransition.a = #False, SkyTransitionTimer.f, SkyColorIndexDirection.b
-Global Score.f, ScoreModuloDivisor.l, DrawCollisionBoxes.a = #False, PausedGame.a = #False
-#Max_Score_Flash_Timer = 1.5 : #Max_Score_Sub_Flash_Timer = 0.075
+Global Score.f, RoundedScore.i, ScoreModuloDivisor.l, DrawCollisionBoxes.a = #False, PausedGame.a = #False
+#Max_Score_Flash_Timer = 1.5 : #Max_Score_Sub_Flash_Timer = 0.075 : #Max_Score_Velocity = 1500
 #Animation_FPS = 12 : #Bitmap_Font_Sprite = 0 : #Obstacle_Gap_Time_Multiplier = 0.8 : #Cloud_Vel_Multiplier = 0.25
 Global Hero_Sprite_Path.s = BasePath + "graphics" + #PS$ + "hero.png", Hero_Sprite_Path_Night.s = BasePath + "graphics" + #PS$ + "hero-greyed.png"
 Global Dog_Sprite_Path.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent.png", Dog_Sprite_Path_Night.s = BasePath + "graphics" + #PS$ + "dog-48x27-transparent-greyed.png";Represented by D below;Represented by D below
@@ -189,16 +189,17 @@ Procedure StartGame();we start a new game here
   IsHeroOnGround = #True : HeroJumpTimer = 0.0 : IsHeroJumping = #False : IsGameOver = #False : IsInvincibleMode = #False
   BaseVelocity = 1.0 : ObstaclesVelocity = 250.0
   SkyColorIndex = 0 : SkyColor = SkyColors(SkyColorIndex) : SkyTimer = 0.0 : SkyTransition = #False : SkyTransitionTimer = 0.0 : SkyColorIndexDirection = 1
-  Score = 0.0 : ScoreModuloDivisor = 100 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
+  Score = 0.0 : RoundedScore = 0 : ScoreModuloDivisor = 100 : LoadSprite(#Bitmap_Font_Sprite, BasePath + "graphics" + #PS$ + "font.png")
   LoadGroundSprites(SpriteList()) : AddRandomClouds(Random(5, 3), #True) : CloudTimer = 0.0 : MaxCloudTimer = ScreenWidth() / (#Cloud_Vel_Multiplier * ObstaclesVelocity * BaseVelocity)
   ScoreFlashTimer = 0.0 : ScoreSubFlashTimer = 0.0 : ShowScore.a = #True
 EndProcedure
 Procedure AddRandomObstaclePattern()
-  NumWaves.a = Random(6, 2) : MaxObstacleGapMultiplier.f = 1.0 + (Random(100) / 100.0) : GapBetweenObstacleWaves.f = Random(ObstaclesVelocity * BaseVelocity * #Obstacle_Gap_Time_Multiplier * MaxObstacleGapMultiplier, (ObstaclesVelocity * BaseVelocity * #Obstacle_Gap_Time_Multiplier))
+  MaxScoreVelocityMultiplier.f = IIf(Bool(RoundedScore < #Max_Score_Velocity), #Obstacle_Gap_Time_Multiplier, #Obstacle_Gap_Time_Multiplier * 0.9)
+  NumWaves.a = Random(6, 2) : MaxObstacleGapMultiplier.f = 1.0 + (Random(100) / 100.0) : GapBetweenObstacleWaves.f = Random(ObstaclesVelocity * BaseVelocity * MaxScoreVelocityMultiplier * MaxObstacleGapMultiplier, (ObstaclesVelocity * BaseVelocity * MaxScoreVelocityMultiplier))
   ;Debug "ObstaclesVelocity * BaseVelocity:" + StrF(ObstaclesVelocity * BaseVelocity)
   For i.a = 1 To NumWaves
     QtdPatterns.a = CountString(ObstaclesPatterns, ";") + 1
-    Pattern.s = StringField(ObstaclesPatterns, Random(QtdPatterns, 1), ";") : XOffSet.f = IIf(Bool(#Obstacle_Gap_Time_Multiplier * ObstaclesVelocity * BaseVelocity < HeroDistanceFromScreenEdge - 32), HeroDistanceFromScreenEdge - 32, #Obstacle_Gap_Time_Multiplier * ObstaclesVelocity * BaseVelocity)
+    Pattern.s = StringField(ObstaclesPatterns, Random(QtdPatterns, 1), ";") : XOffSet.f = IIf(Bool(MaxScoreVelocityMultiplier * ObstaclesVelocity * BaseVelocity < HeroDistanceFromScreenEdge - 16), HeroDistanceFromScreenEdge - 16, MaxScoreVelocityMultiplier * ObstaclesVelocity * BaseVelocity)
     ShouldAddBird = Bool((Score >= 600) And (i = NumWaves) And (Random(100, 1) / 100.0 < 0.4));only adds birds at the last wave
     If ShouldAddBird : Pattern = Pattern + "B" : EndIf
     For j.a = 1  To Len(Pattern)
@@ -214,8 +215,8 @@ Procedure AddRandomObstaclePattern()
           FenceNight.i = LoadSprite(#PB_Any, Fence_Sprite_Path_Night)
           InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, #Obstacle, 1, #True, #True, @UpdateObstacle(), FenceNight, 1, 3)
         Case 'B'
-          BirdNight.i = LoadSprite(#PB_Any, Bird_Sprite_Path_Night)
-          InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity * 0.7, 0, Bird_Sprite_Path, #Obstacle, 5, #True, #True, @UpdateObstacle(), BirdNight, 1, 3)
+          BirdNight.i = LoadSprite(#PB_Any, Bird_Sprite_Path_Night) : BirdVelocityMultiplier.f = IIf(Bool(RoundedScore < #Max_Score_Velocity), 0.7, Random(80, 70) / 100.0)
+          InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity * BirdVelocityMultiplier, 0, Bird_Sprite_Path, #Obstacle, 5, #True, #True, @UpdateObstacle(), BirdNight, 1, 3)
       EndSelect
       SpriteList()\x = XOffSet + (i - 1) * GapBetweenObstacleWaves : XOffSet + (SpriteList()\Width * SpriteList()\ZoomLevel)
       If Obstacle <> 'B';its not a bird, should be added at the hero level at the ground
@@ -234,12 +235,13 @@ Procedure.u CountSprites(SpriteType.a)
   ProcedureReturn Qtd
 EndProcedure
 Procedure UpdateGameLogic(Elapsed.f)
-  Score + Elapsed * 10 : RoundedScore.i = Int(Round(Score, #PB_Round_Nearest))
+  Score + Elapsed * 10 : RoundedScore = Int(Round(Score, #PB_Round_Nearest))
   If CountSprites(#Obstacle) = 0
     AddRandomObstaclePattern()
   EndIf
   If RoundedScore <> 0 And RoundedScore % ScoreModuloDivisor = 0
-    BaseVelocity * 1.1 : ScoreModuloDivisor + 100 : PlaySoundEffect(#Score) : ScoreFlashTimer = #Max_Score_Flash_Timer
+    BaseVelocity = IIf(Bool(RoundedScore <= #Max_Score_Velocity), BaseVelocity * 1.1, BaseVelocity);after #Max_Score_Velocity points we don't increase the base velocity anymore
+    ScoreModuloDivisor + 100 : PlaySoundEffect(#Score) : ScoreFlashTimer = #Max_Score_Flash_Timer
   EndIf
   CloudTimer + Elapsed
   If CloudTimer >= MaxCloudTimer
