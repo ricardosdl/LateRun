@@ -6,6 +6,7 @@ Structure TRect
 EndStructure
 Prototype UpdateSpriteProc(SpriteAddress.i, Elapsed.f);our prototype procedure that each sprite can call to update itself
 EnumerationBinary SpriteTypes : #Hero : #Obstacle : #Ground : #Cloud : EndEnumeration;we use to indentigy different type of sprites
+Enumeration Sounds : #Jump : #Collision : #Score : EndEnumeration
 Structure TSprite
   x.f : y.f;position
   XVelocity.f : YVelocity.f;velociy in each axis
@@ -47,6 +48,11 @@ Procedure SetCollisionRect(*Sprite.TSprite, Offset.a = 8)
   *Sprite\CollisionRect\x = (*Sprite\x + (*Sprite\Width * *Sprite\ZoomLevel) / 2) - *Sprite\CollisionRect\w / 2
   *Sprite\CollisionRect\y = (*Sprite\y + (*Sprite\Height * *Sprite\ZoomLevel) / 2) - *Sprite\CollisionRect\h / 2
 EndProcedure
+Procedure PlaySoundEffect(Sound.a)
+  If SoundInitiated; And Not SoundMuted
+    PlaySound(Sound)
+  EndIf
+EndProcedure
 Procedure InitializeSprite(*Sprite.TSprite, x.f, y.f, XVel.f, YVel.f, SpritePath.s, SpriteType.a, NumFrames.a, IsAnimated.a, IsAlive.b, UpdateProc.UpdateSpriteProc, SpriteNumNight.i, ZoomLevel.f = 1, DrawOrder.u = 0)
   *Sprite\x = x : *Sprite\y = y : *Sprite\XVelocity = XVel : *Sprite\YVelocity = YVel
   *Sprite\SpriteNum = LoadSprite(#PB_Any, SpritePath) : *Sprite\SpriteType = SpriteType : *Sprite\IsAlive = IsAlive : *Sprite\ZoomLevel = ZoomLevel
@@ -69,6 +75,7 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
     StartJump = ElapsedMilliseconds()
     *HeroSprite\YVelocity = IIf(Bool(HeroJumpTimer >= 0.15), -750.0, -650.0)
     IsHeroJumping = #False : HeroJumpTimer = 0.0 : EndHeroJump = #False : IsHeroOnGround = #False
+    PlaySoundEffect(#Jump)
   EndIf
   *HeroSprite\y + *HeroSprite\YVelocity * Elapsed
   LowestHeroY = IIf(Bool(*HeroSprite\y < LowestHeroY), *HeroSprite\y, LowestHeroY)
@@ -84,7 +91,7 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
   ForEach SpriteList()
     If SpriteList()\SpriteType & #Obstacle;we only check collisions with obstacles
       If AABBCollision(@*HeroSprite\CollisionRect, @SpriteList()\CollisionRect)
-        IsGameOver = Bool(Not IsInvincibleMode)
+        IsGameOver = Bool(Not IsInvincibleMode) : PlaySoundEffect(#Collision)
       EndIf
     EndIf
   Next
@@ -229,7 +236,7 @@ Procedure UpdateGameLogic(Elapsed.f)
     AddRandomObstaclePattern()
   EndIf
   If RoundedScore <> 0 And RoundedScore % ScoreModuloDivisor = 0
-    BaseVelocity * 1.1 : ScoreModuloDivisor + 100
+    BaseVelocity * 1.1 : ScoreModuloDivisor + 100 : PlaySoundEffect(#Score)
   EndIf
   CloudTimer + Elapsed
   If CloudTimer >= MaxCloudTimer
@@ -276,6 +283,16 @@ Procedure ShowSky(Elapsed.f)
     EndIf
   EndIf
 EndProcedure
+Procedure LoadSounds()
+  If SoundInitiated
+    LoadSound(#Jump, BasePath + "sounds" + #PS$ + "jump.wav")
+    LoadSound(#Collision, BasePath + "sounds" + #PS$ + "collision.wav")
+    LoadSound(#Score, BasePath + "sounds" + #PS$ + "score.wav")
+;     If LoadSound(#Ball_Touch, BasePath + "ball_touch.wav")
+;       PlaySoundEffect(#Ball_Touch);on windows the first call to playsound is taking over a second to complete, so we call it here to get over it
+;     EndIf
+  EndIf
+EndProcedure
 If InitSprite() = 0 Or InitKeyboard() = 0
   MessageRequester("Error", "Sprite system or keyboard system can't be initialized", 0)
   End
@@ -283,7 +300,7 @@ EndIf
 UsePNGImageDecoder() : SoundInitiated = InitSound()
 If OpenWindow(0, 0, 0, 640, 480, "Late Run", #PB_Window_SystemMenu | #PB_Window_ScreenCentered)
   If OpenWindowedScreen(WindowID(0), 0, 0, 640, 480, 0, 0, 0)
-    StartGame()
+    LoadSounds() : StartGame()
     Repeat
       StartTimeInMs = ElapsedMilliseconds()
       Repeat
