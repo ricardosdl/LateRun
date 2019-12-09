@@ -90,7 +90,7 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
   SetCollisionRect(*HeroSprite);update the collision rectangle based on the new player hero position
   ForEach SpriteList()
     If SpriteList()\SpriteType & #Obstacle;we only check collisions with obstacles
-      If AABBCollision(@*HeroSprite\CollisionRect, @SpriteList()\CollisionRect)
+      If (Not IsGameOver) And (Not IsInvincibleMode) And AABBCollision(@*HeroSprite\CollisionRect, @SpriteList()\CollisionRect)
         IsGameOver = Bool(Not IsInvincibleMode) : PlaySoundEffect(#Collision)
       EndIf
     EndIf
