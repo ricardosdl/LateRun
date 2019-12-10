@@ -282,6 +282,10 @@ Procedure DrawHUD(Elapsed.f)
   If IsInvincibleMode : DrawBitmapText(5, ScreenHeight() - 30, "Invincible mode", 8, 12) : EndIf
   If PausedGame : DrawBitmapText(ScreenWidth() / 2 - 96 / 2, ScreenHeight() / 2 - 24 / 2, "PAUSED") : EndIf
   DrawBitmapText(0 + 15, 10, "Highest:" + Str(HighestScore))
+  If IsGameOver
+    DrawBitmapText(ScreenWidth() / 2 - (Len("Game Over") * 16 / 2), ScreenHeight() / 2 - 30, "Game Over")
+    DrawBitmapText(ScreenWidth() / 2 - (Len("(Enter To restart)") * 16 / 2), ScreenHeight() / 2, "(Enter To restart)")
+  EndIf
 EndProcedure
 Procedure UpdateInput()
   If KeyboardReleased(#PB_Key_Return) And IsGameOver
@@ -289,7 +293,7 @@ Procedure UpdateInput()
   EndIf
   IsInvincibleMode = Bool(KeyboardReleased(#PB_Key_I) XOr IsInvincibleMode);if we press I the collision of obstacles is not game ove anymore
   DrawCollisionBoxes = Bool(KeyboardReleased(#PB_Key_C) XOr DrawCollisionBoxes);press C to show/hide the collision boxes
-  PausedGame = Bool(KeyboardReleased(#PB_Key_P) XOr PausedGame)
+  PausedGame = Bool((KeyboardReleased(#PB_Key_P) XOr PausedGame) And (Not IsGameOver))
   If KeyboardReleased(#PB_Key_N);debug only, press N to advance the score and the obstacles' velocity
     NextScore.f = Round(Score / 100, #PB_Round_Up) * 100 : Score = NextScore
   EndIf
