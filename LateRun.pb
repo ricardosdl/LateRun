@@ -33,7 +33,7 @@ Global BaseVelocity.f, ObstaclesVelocity.f, CloudTimer.f, MaxCloudTimer.f
 Global Dim SkyColors.i(4) : SkyColors(0) = RGB($81, $b1, $d9) : SkyColors(1) = RGB($ff, $99, $33) : SkyColors(2) = RGB($ff, $66, $33)
 SkyColors(3) = RGB($69, $69, $69) : SkyColors(4) = RGB(0, 0, 0)
 Global SkyColor.i, SkyTimer.f, SkyColorIndex.i = 0, SkyTransition.a = #False, SkyTransitionTimer.f, SkyColorIndexDirection.b
-Global Score.f, RoundedScore.i, ScoreModuloDivisor.l, DrawCollisionBoxes.a = #False, PausedGame.a = #False
+Global Score.f, RoundedScore.i, HighestScore.i = 0, ScoreModuloDivisor.l, DrawCollisionBoxes.a = #False, PausedGame.a = #False
 #Max_Score_Flash_Timer = 1.5 : #Max_Score_Sub_Flash_Timer = 0.075 : #Max_Score_Velocity = 1500
 #Animation_FPS = 12 : #Bitmap_Font_Sprite = 0 : #Obstacle_Gap_Time_Multiplier = 0.8 : #Cloud_Vel_Multiplier = 0.25
 Global Hero_Sprite_Path.s = BasePath + "graphics" + #PS$ + "hero.png", Hero_Sprite_Path_Night.s = BasePath + "graphics" + #PS$ + "hero-greyed.png"
@@ -94,6 +94,7 @@ Procedure UpdateHero(HeroSpriteAddress.i, Elapsed.f);we should upadate the Hero 
     If SpriteList()\SpriteType & #Obstacle;we only check collisions with obstacles
       If (Not IsGameOver) And (Not IsInvincibleMode) And AABBCollision(@*HeroSprite\CollisionRect, @SpriteList()\CollisionRect)
         IsGameOver = Bool(Not IsInvincibleMode) : PlaySoundEffect(#Collision)
+        HighestScore = IIf(Bool(RoundedScore > HighestScore), RoundedScore, HighestScore)
       EndIf
     EndIf
   Next
@@ -280,6 +281,7 @@ Procedure DrawHUD(Elapsed.f)
   If ShowScore : DrawBitmapText(ScreenWidth() / 2, 10, Str(Round(Score, #PB_Round_Nearest))) : EndIf
   If IsInvincibleMode : DrawBitmapText(5, ScreenHeight() - 30, "Invincible mode", 8, 12) : EndIf
   If PausedGame : DrawBitmapText(ScreenWidth() / 2 - 96 / 2, ScreenHeight() / 2 - 24 / 2, "PAUSED") : EndIf
+  DrawBitmapText(0 + 15, 10, "Highest:" + Str(HighestScore))
 EndProcedure
 Procedure UpdateInput()
   If KeyboardReleased(#PB_Key_Return) And IsGameOver
