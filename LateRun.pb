@@ -195,7 +195,15 @@ Procedure StartGame();we start a new game here
 EndProcedure
 Procedure AddRandomObstaclePattern()
   MaxScoreVelocityMultiplier.f = IIf(Bool(RoundedScore < #Max_Score_Velocity), #Obstacle_Gap_Time_Multiplier, #Obstacle_Gap_Time_Multiplier * 0.9)
-  NumWaves.a = Random(6, 2) : MaxObstacleGapMultiplier.f = 1.0 + (Random(100) / 100.0) : GapBetweenObstacleWaves.f = Random(ObstaclesVelocity * BaseVelocity * MaxScoreVelocityMultiplier * MaxObstacleGapMultiplier, (ObstaclesVelocity * BaseVelocity * MaxScoreVelocityMultiplier))
+  MaxObstacleGapMultiplier.f = 1.0
+  If RoundedScore < #Max_Score_Velocity
+    MaxObstacleGapMultiplier + Random(100) / 100.0;MaxObstacleGapMultiplier ranges from 1.0 to 2.0
+  ElseIf RoundedScore < (2 * #Max_Score_Velocity)
+    MaxObstacleGapMultiplier + Random(50) / 100.0;MaxObstacleGapMultiplier ranges from 1.0 to 1.5
+  EndIf
+  BaseObstaclesVelocity.f = ObstaclesVelocity * BaseVelocity * MaxScoreVelocityMultiplier
+  GapBetweenObstacleWaves.f = Random(BaseObstaclesVelocity * MaxObstacleGapMultiplier, BaseObstaclesVelocity)
+  NumWaves.a = Random(6, 2)
   ;Debug "ObstaclesVelocity * BaseVelocity:" + StrF(ObstaclesVelocity * BaseVelocity)
   For i.a = 1 To NumWaves
     QtdPatterns.a = CountString(ObstaclesPatterns, ";") + 1
