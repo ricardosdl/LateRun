@@ -223,10 +223,11 @@ Procedure AddRandomObstaclePattern()
           FenceNight.i = LoadSprite(#PB_Any, Fence_Sprite_Path_Night)
           InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity, 0, Fence_Sprite_Path, #Obstacle, 1, #True, #True, @UpdateObstacle(), FenceNight, 1, 3)
         Case 'B'
-          BirdNight.i = LoadSprite(#PB_Any, Bird_Sprite_Path_Night) : BirdVelocityMultiplier.f = IIf(Bool(RoundedScore < #Max_Score_Velocity), 0.7, Random(80, 70) / 100.0)
+          BirdNight.i = LoadSprite(#PB_Any, Bird_Sprite_Path_Night) : BirdVelocityMultiplier.f = IIf(Bool(RoundedScore < #Max_Score_Velocity), 0.9, Random(100, 90) / 100.0)
           InitializeSprite(@SpriteList(), 0, 0, -ObstaclesVelocity * BaseVelocity * BirdVelocityMultiplier, 0, Bird_Sprite_Path, #Obstacle, 5, #True, #True, @UpdateObstacle(), BirdNight, 1, 3)
       EndSelect
-      SpriteList()\x = XOffSet + (i - 1) * GapBetweenObstacleWaves : XOffSet + (SpriteList()\Width * SpriteList()\ZoomLevel)
+      IIndex = i + IIf(Bool(Obstacle = 'B'), 1, 0);hack to make the bird start a "new" wave after the before last obstacle
+      SpriteList()\x = XOffSet + (IIndex - 1) * GapBetweenObstacleWaves : XOffSet + (SpriteList()\Width * SpriteList()\ZoomLevel)
       If Obstacle <> 'B';its not a bird, should be added at the hero level at the ground
         SpriteList()\y = HeroBottom - (SpriteList()\Height * SpriteList()\ZoomLevel)
       Else;adding a bird
