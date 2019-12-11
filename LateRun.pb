@@ -280,7 +280,10 @@ Procedure DrawHUD(Elapsed.f)
   EndIf
   If ShowScore : DrawBitmapText(ScreenWidth() / 2, 10, Str(Round(Score, #PB_Round_Nearest))) : EndIf
   If IsInvincibleMode : DrawBitmapText(5, ScreenHeight() - 30, "Invincible mode", 8, 12) : EndIf
-  If PausedGame : DrawBitmapText(ScreenWidth() / 2 - 96 / 2, ScreenHeight() / 2 - 24 / 2, "PAUSED") : EndIf
+  If PausedGame
+    DrawBitmapText(ScreenWidth() / 2 - (Len("PAUSED") * 16 / 2), ScreenHeight() / 2 - 24 / 2, "PAUSED")
+    DrawBitmapText(ScreenWidth() / 2 - (Len("game by @ricardo_sdl") * 16 / 2), ScreenHeight() / 2 - (24 / 2) + 24, "game by @ricardo_sdl")
+  EndIf
   DrawBitmapText(0 + 15, 10, "Highest:" + Str(HighestScore))
   If IsGameOver
     DrawBitmapText(ScreenWidth() / 2 - (Len("Game Over") * 16 / 2), ScreenHeight() / 2 - 30, "Game Over")
