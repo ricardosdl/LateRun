@@ -1,6 +1,9 @@
 ﻿Procedure.f IIf(Test.b, ValTrue.f, ValFalse.f);classic vb function, helps us to save some lines in if else endif fragments
   If Test : ProcedureReturn ValTrue : EndIf : ProcedureReturn ValFalse
 EndProcedure
+Procedure.i IIfI(Test.a, ValTrue.i, ValFalse.i);classic vb function, helps us to save some lines in if else endif fragments
+  If Test : ProcedureReturn ValTrue : EndIf : ProcedureReturn ValFalse
+EndProcedure
 Structure TRect
   x.f : y.f : w.f : h.f
 EndStructure
@@ -131,7 +134,7 @@ EndProcedure
 Procedure DisplaySpriteList(List SpriteList.TSprite(), Elapsed.f)
   SortStructuredList(SpriteList(), #PB_Sort_Ascending, OffsetOf(TSprite\DrawOrder), TypeOf(TSprite\DrawOrder))
   ForEach SpriteList() : IsNight.a = Bool(SkyColorIndex = 4);if it is night we draw the spritenumnight instead
-    SpriteToDisplay.i = IIf(Bool(Not IsNight Or SpriteList()\SpriteNumNight = -1), SpriteList()\SpriteNum, SpriteList()\SpriteNumNight)
+    SpriteToDisplay.i = IIfI(Bool(Not IsNight Or SpriteList()\SpriteNumNight = -1), SpriteList()\SpriteNum, SpriteList()\SpriteNumNight)
     ClipSprite(SpriteToDisplay, SpriteList()\CurrentFrame * SpriteList()\Width, 0, SpriteList()\Width, SpriteList()\Height);here we clip the current frame that we want to display
     ZoomSprite(SpriteToDisplay, SpriteList()\Width * SpriteList()\ZoomLevel, SpriteList()\Height * SpriteList()\ZoomLevel) ;the zoom must be applied after the clipping(https://www.purebasic.fr/english/viewtopic.php?p=421807#p421807)
     If SpriteList()\IsAnimated
